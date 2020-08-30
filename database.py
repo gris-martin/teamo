@@ -4,6 +4,7 @@ import discord
 from datetime import datetime
 from dataclasses import dataclass
 import uuid
+from typing import List
 
 import models
 
@@ -46,6 +47,25 @@ class Database:
                 )
             )
             await db.commit()
+
+    async def get_all_entries(self) -> List[models.Entry]:
+        async with aiosqlite.connect(self.db_name) as db:
+            # Get entries
+            entry_cursor = await db.execute("SELECT * FROM entries")
+            entry_rows = await entry_cursor.fetchall()
+            entries = dict()
+            for row in entry_rows:
+                entry = models.Entry(*row)
+                entries[entry.discord_message_id] = entry
+
+            # Append members
+            member_cursor = await db.execute("SELECT * FROM members")
+            member_rows = await member_cursor.fetchall()
+            for row in member_rows:
+                member = models.Member(*row[1:])
+                entries[row[0]].members.append(member)
+
+            return list(entries.values())
 
     async def delete_entry(self, message_id: int):
         async with aiosqlite.connect(self.db_name) as db:
@@ -155,10 +175,14 @@ async def main():
     await db.insert_member(entry2.discord_message_id, member3)
 
     entry_get = await db.get_entry(entry1.discord_message_id)
+    entries = await db.get_all_entries()
+    print(len(entries))
     print(entry_get)
 
     await db.delete_entry(entry1.discord_message_id)
     entry_get = await db.get_entry(entry1.discord_message_id)
+    entries = await db.get_all_entries()
+    print(len(entries))
     print(entry_get)
 
 if __name__ == "__main__":

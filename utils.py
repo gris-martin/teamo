@@ -19,28 +19,27 @@ def get_date_string(date: datetime) -> str:
 def get_timedelta_string(td: timedelta) -> str:
     tot_secs = floor(td.total_seconds())
     if tot_secs < 60:
-        return f"{tot_secs}s"
+        return f"<1min"
 
     mins = floor(tot_secs / 60)
-    secs = tot_secs - mins * 60
     if tot_secs < 60 * 60:
-        return f"{mins}min {secs}s"
+        return f"{mins}min"
 
     hours = floor(mins / 60)
     mins -= hours * 60
     if (hours < 24):
-        return f"{hours}h {mins}min {secs}s"
+        return f"{hours}h {mins}min"
 
     days = floor(hours/24)
     hours -= days * 24
-    return f"{days}days {hours}h {mins}min {secs}s"
+    return f"{days}days {hours}h {mins}min"
 
 
 def create_embed(entry: Entry, is_cancelling: bool = False) -> discord.Embed:
     date_string = get_date_string(entry.start_date)
     embed = discord.Embed(
         title="Time for **{}**!!".format(entry.game),
-        description=f"**Start: {date_string}** - To subscribe, select the emote below with the number of players in your group."
+        description=f"**Start: {date_string}** - To subscribe, select the #️⃣ reaction below with the number of players in your group. To cancel the event, select the {cancel_emoji} reaction."
     )
     embed.color = discord.Color.purple()
     tl: timedelta = entry.start_date - datetime.now()
@@ -68,7 +67,7 @@ def create_embed(entry: Entry, is_cancelling: bool = False) -> discord.Embed:
     footer_text = ""
     if entry.discord_message_id is not None:
         footer_text += f"ID: {entry.discord_message_id}\n"
-    footer_text += f"Last updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+    footer_text += f"Last updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} (updated every {config.update_interval} seconds)"
     embed.set_footer(text=footer_text)
 
     return embed
