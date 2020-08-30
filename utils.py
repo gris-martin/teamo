@@ -3,7 +3,7 @@ from typing import List
 from math import floor
 
 import discord
-from models import Member
+from models import Member, Entry
 
 
 def get_date_string(date: datetime) -> str:
@@ -35,21 +35,21 @@ def get_timedelta_string(td: timedelta) -> str:
     return f"{days}days {hours}h {mins}min {secs}s"
 
 
-def create_embed(game: str, date: datetime, max_players: int, members: List[Member] = list()) -> discord.Embed:
-    date_string = get_date_string(date)
+def create_embed(entry: Entry) -> discord.Embed:
+    date_string = get_date_string(entry.start_date)
     embed = discord.Embed(
-        title="Time for **{}**!!".format(game),
+        title="Time for **{}**!!".format(entry.game),
         description=f"**Start: {date_string}** - To subscribe, select the emote below with the number of players in your group."
     )
     embed.color = discord.Color.purple()
-    tl: timedelta = date - datetime.now()
+    tl: timedelta = entry.start_date - datetime.now()
     embed.add_field(name="Time left", value=get_timedelta_string(tl))
-    embed.add_field(name="Players per team", value=max_players)
+    embed.add_field(name="Players per team", value=entry.max_players)
 
     def get_member_string():
-        if len(members) > 0:
+        if len(entry.members) > 0:
             member_string = ""
-            for member in members:
+            for member in entry.members:
                 member_string += f"{member.discord_user_name} (**{member.num_players}**), "
                 return member_string[0:-2]
         else:
@@ -57,8 +57,11 @@ def create_embed(game: str, date: datetime, max_players: int, members: List[Memb
 
     embed.add_field(name="Registered", value=get_member_string())
 
-    embed.set_footer(
-        text=f"Last updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    footer_text = ""
+    if entry.discord_message_id is not None:
+        footer_text += f"ID: {entry.discord_message_id}\n"
+    footer_text += f"Last updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+    embed.set_footer(text=footer_text)
 
     return embed
 

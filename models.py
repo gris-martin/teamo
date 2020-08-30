@@ -13,12 +13,12 @@ class Member(NamedTuple):
 class Entry:
     def __init__(
         self,
-        message_id: int,
-        channel_id: int,
-        server_id: int,
-        game: str,
-        start_date,
-        max_players: int,
+        message_id: int = None,
+        channel_id: int = None,
+        server_id: int = None,
+        game: str = None,
+        start_date=None,
+        max_players: int = None,
         members=None
     ):
         self.discord_message_id: int = message_id

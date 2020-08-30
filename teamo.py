@@ -24,6 +24,7 @@ class Teamo(commands.Cog):
 
     # TODO: All of this should be executed before starting another event...
     # To replicate: Try adding many reactions at once.
+
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
         if payload.member.bot:
@@ -76,7 +77,7 @@ class Teamo(commands.Cog):
     async def update_message(self, entry: models.Entry):
         channel: discord.TextChannel = await self.bot.fetch_channel(entry.discord_channel_id)
         message: discord.Message = await channel.fetch_message(entry.discord_message_id)
-        await message.edit(embed=utils.create_embed(entry.game, entry.start_date, entry.max_players, entry.members))
+        await message.edit(embed=utils.create_embed(entry))
 
     @commands.command()
     async def create(self, ctx: discord.ext.commands.Context, *, arg: str):
@@ -118,7 +119,12 @@ class Teamo(commands.Cog):
 
         # Create message
         #   Create embed
-        embed = utils.create_embed(game, date, max_players)
+        initial_entry = models.Entry(
+            game=game,
+            start_date=date,
+            max_players=max_players
+        )
+        embed = utils.create_embed(initial_entry)
 
         #   Send embed to Discord
         message: discord.Message = await ctx.send(embed=embed)
