@@ -6,3 +6,6 @@ update_interval = 15
 
 # Number of seconds to wait after deleting user messages to Teamo (0 to delete immediately, < 0 to never delete)
 user_message_delete_delay = 15
+
+# The interval in seconds for which to check if a Teamo is done
+finish_check_interval = 5

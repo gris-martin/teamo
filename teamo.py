@@ -24,12 +24,7 @@ class Teamo(commands.Cog):
         self.locks: Dict[int, asyncio.Lock] = dict()
         self.cancel_tasks: Dict[int, asyncio.Task] = dict()
 
-    async def cancel_after(self, message_id: int):
-        try:
-            await asyncio.sleep(config.cancel_timeout)
-        except asyncio.CancelledError:
-            return
-
+    async def delete_entry(self, message_id: int):
         async with self.locks[message_id]:
             # Delete message from discord
             entry = await self.db.get_entry(message_id)
@@ -40,17 +35,39 @@ class Teamo(commands.Cog):
             # Delete message from db
             await self.db.delete_entry(message_id)
 
-    async def update_all_messages(self):
+    async def cancel_after(self, message_id: int):
+        try:
+            await asyncio.sleep(config.cancel_timeout)
+        except asyncio.CancelledError:
+            return
+        await self.delete_entry(message_id)
+
+    async def update_timer(self):
         while True:
             entries = await self.db.get_all_entries()
             for entry in entries:
                 await self.update_message(entry)
             await asyncio.sleep(config.update_interval)
 
+    async def finish_timer(self):
+        while True:
+            entries = await self.db.get_all_entries()
+            for entry in entries:
+                if entry.start_date > datetime.now():
+                    continue
+                channel = await self.bot.fetch_channel(entry.discord_channel_id)
+                await utils.create_finish_embed(channel, entry)
+                await self.delete_entry(entry.discord_message_id)
+            await asyncio.sleep(config.finish_check_interval)
+
     @commands.Cog.listener()
     async def on_ready(self):
+        entries = await self.db.get_all_entries()
+        for entry in entries:
+            self.locks[entry.discord_message_id] = asyncio.Lock()
         if config.update_interval > 0:
-            asyncio.create_task(self.update_all_messages())
+            asyncio.create_task(self.update_timer())
+        asyncio.create_task(self.finish_timer())
         print("Teamo is ready!")
 
     @commands.Cog.listener()
