@@ -49,7 +49,8 @@ class Teamo(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        asyncio.create_task(self.update_all_messages())
+        if config.update_interval > 0:
+            asyncio.create_task(self.update_all_messages())
         print("Teamo is ready!")
 
     @commands.Cog.listener()
@@ -195,4 +196,5 @@ class Teamo(commands.Cog):
             await message.add_reaction(utils.cancel_emoji)
 
         # Remove initial message
-        await ctx.message.delete(delay=config.user_message_delete_delay)
+        if config.user_message_delete_delay >= 0:
+            await ctx.message.delete(delay=config.user_message_delete_delay)
