@@ -193,3 +193,6 @@ class Teamo(commands.Cog):
                 await message.add_reaction(utils.number_emojis[i])
 
             await message.add_reaction(utils.cancel_emoji)
+
+        # Remove initial message
+        await ctx.message.delete(delay=config.user_message_delete_delay)
