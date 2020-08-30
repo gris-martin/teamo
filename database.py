@@ -47,6 +47,16 @@ class Database:
             )
             await db.commit()
 
+    async def delete_entry(self, message_id: int):
+        async with aiosqlite.connect(self.db_name) as db:
+            await db.execute(
+                "DELETE FROM entries WHERE entry_id=?", (message_id,)
+            )
+            await db.execute(
+                "DELETE FROM members WHERE entry_id=?", (message_id,)
+            )
+            await db.commit()
+
     async def insert_member_raw(self, db, entry_id: int, member: models.Member):
         await db.execute(
             "INSERT INTO members VALUES (?, ?, ?, ?)",
@@ -144,6 +154,10 @@ async def main():
     await db.insert_member(entry1.discord_message_id, member2)
     await db.insert_member(entry2.discord_message_id, member3)
 
+    entry_get = await db.get_entry(entry1.discord_message_id)
+    print(entry_get)
+
+    await db.delete_entry(entry1.discord_message_id)
     entry_get = await db.get_entry(entry1.discord_message_id)
     print(entry_get)
 

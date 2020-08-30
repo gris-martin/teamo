@@ -13,6 +13,7 @@ import utils
 from database import Database
 import asyncio
 from utils import send_and_print
+import config
 
 
 class Teamo(commands.Cog):
@@ -21,6 +22,23 @@ class Teamo(commands.Cog):
         self.db = Database("teamo.db")
         asyncio.run(self.db.init())
         self.locks: Dict[int, asyncio.Lock] = dict()
+        self.cancel_tasks: Dict[int, asyncio.Task] = dict()
+
+    async def cancel_after(self, message_id: int):
+        try:
+            await asyncio.sleep(config.cancel_timeout)
+        except asyncio.CancelledError:
+            return
+
+        async with self.locks[message_id]:
+            # Delete message from discord
+            entry = await self.db.get_entry(message_id)
+            channel = await self.bot.fetch_channel(entry.discord_channel_id)
+            message = await channel.fetch_message(entry.discord_message_id)
+            await message.delete()
+
+            # Delete message from db
+            await self.db.delete_entry(message_id)
 
     # TODO: All of this should be executed before starting another event...
     # To replicate: Try adding many reactions at once.
@@ -48,6 +66,9 @@ class Teamo(commands.Cog):
 
         # If cancel emoji: Start cancel procedure
         if emoji.name == utils.cancel_emoji:
+            cancel_task = asyncio.create_task(self.cancel_after(message_id))
+            self.cancel_tasks[message_id] = cancel_task
+            await self.update_message(message_id)
             print("TODO: Cancelling!")
             return
 
@@ -61,8 +82,10 @@ class Teamo(commands.Cog):
             # Do not have to remove any reactions if the user wasn't registered before
             # or if the previous entry was the same as the current one (somehow)
             if previous_num_players is None or previous_num_players == num_players:
+                await self.update_message(message_id)
                 return
 
+            # Delete old reactions
             channel: discord.TextChannel = await self.bot.fetch_channel(payload.channel_id)
             message: discord.Message = await channel.fetch_message(message_id)
             previous_emoji = utils.number_emojis[previous_num_players-1]
@@ -70,14 +93,15 @@ class Teamo(commands.Cog):
                 (r for r in message.reactions if r.emoji == previous_emoji), None)
             await old_reaction.remove(payload.member)
 
-            # TODO: Update message
-            new_entry = await self.db.get_entry(message_id)
-            await self.update_message(new_entry)
+            # Update message
+            await self.update_message(message_id)
 
-    async def update_message(self, entry: models.Entry):
+    async def update_message(self, message_id: int):
+        is_cancelling = True if message_id in self.cancel_tasks else False
+        entry = await self.db.get_entry(message_id)
         channel: discord.TextChannel = await self.bot.fetch_channel(entry.discord_channel_id)
         message: discord.Message = await channel.fetch_message(entry.discord_message_id)
-        await message.edit(embed=utils.create_embed(entry))
+        await message.edit(embed=utils.create_embed(entry, is_cancelling))
 
     @commands.command()
     async def create(self, ctx: discord.ext.commands.Context, *, arg: str):
@@ -117,16 +141,13 @@ class Teamo(commands.Cog):
             await send_and_print(ctx.channel, "Game name too long, maximum length of game name is {} characters. Try again!".format(max_game_chars))
             return
 
-        # Create message
-        #   Create embed
+        # Create message and send to Discord
         initial_entry = models.Entry(
             game=game,
             start_date=date,
             max_players=max_players
         )
         embed = utils.create_embed(initial_entry)
-
-        #   Send embed to Discord
         message: discord.Message = await ctx.send(embed=embed)
 
         # Create database entry
@@ -134,7 +155,10 @@ class Teamo(commands.Cog):
                              ctx.guild.id, game, date, max_players)
         await self.db.insert_entry(entry)
 
+        # Update message again to show ID
+        # Add reactions
         self.locks[entry.discord_message_id] = asyncio.Lock()
+        await self.update_message(entry.discord_message_id)
         async with self.locks[entry.discord_message_id]:
             for i in range(min(max_players-1, 10)):
                 await message.add_reaction(utils.number_emojis[i])

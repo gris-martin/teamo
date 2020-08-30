@@ -4,6 +4,7 @@ from math import floor
 
 import discord
 from models import Member, Entry
+import config
 
 
 def get_date_string(date: datetime) -> str:
@@ -35,7 +36,7 @@ def get_timedelta_string(td: timedelta) -> str:
     return f"{days}days {hours}h {mins}min {secs}s"
 
 
-def create_embed(entry: Entry) -> discord.Embed:
+def create_embed(entry: Entry, is_cancelling: bool = False) -> discord.Embed:
     date_string = get_date_string(entry.start_date)
     embed = discord.Embed(
         title="Time for **{}**!!".format(entry.game),
@@ -56,6 +57,13 @@ def create_embed(entry: Entry) -> discord.Embed:
             return "No one has registered yet"
 
     embed.add_field(name="Registered", value=get_member_string())
+
+    if is_cancelling:
+        embed.add_field(
+            name="MESSAGE WILL BE REMOVED",
+            value=f"MESSAGE WILL BE REMOVED IN {config.cancel_timeout} SECONDS. PRESS {cancel_emoji} AGAIN TO ABORT.",
+            inline=False
+        )
 
     footer_text = ""
     if entry.discord_message_id is not None:
