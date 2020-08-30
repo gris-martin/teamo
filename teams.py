@@ -1,16 +1,35 @@
 from typing import List
 from math import floor
+import random
 
 import discord
 
 from models import Member, Entry
 from utils import get_date_string
 
+noun_filename = "nouns.list"
+adjectives_filename = "adjectives.list"
+
+
+def generate_name_list(filename: str) -> List[str]:
+    with open(filename) as f:
+        lines = [line.strip() for line in f.readlines()
+                 if not line.startswith("#")]
+        return lines
+
+
+def generate_name():
+    nouns = generate_name_list(noun_filename)
+    adjectives = generate_name_list(adjectives_filename)
+    noun: str = random.choice(nouns)
+    adjective: str = random.choice(adjectives)
+    return f"{adjective.capitalize()} {noun.capitalize()}"
+
 
 class Team:
     def __init__(self, member: Member = None):
         self.members: List[Member] = list()
-        self.name: str = "??"
+        self.name: str = generate_name()
         if member is not None:
             self.members.append(member)
 
