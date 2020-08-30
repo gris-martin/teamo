@@ -5,6 +5,7 @@ from math import floor
 import discord
 from models import Member
 
+
 def get_date_string(date: datetime) -> str:
     if date.date() == datetime.today().date():
         return "today " + date.strftime("%H:%M:%S")
@@ -12,6 +13,7 @@ def get_date_string(date: datetime) -> str:
         return "tomorrow " + date.strftime("%H:%M:%S")
     else:
         return date.strftime("%Y-%m-%d %H:%M:%S")
+
 
 def get_timedelta_string(td: timedelta) -> str:
     tot_secs = floor(td.total_seconds())
@@ -31,6 +33,7 @@ def get_timedelta_string(td: timedelta) -> str:
     days = floor(hours/24)
     hours -= days * 24
     return f"{days}days {hours}h {mins}min {secs}s"
+
 
 def create_embed(game: str, date: datetime, max_players: int, members: List[Member] = list()) -> discord.Embed:
     date_string = get_date_string(date)
@@ -54,7 +57,8 @@ def create_embed(game: str, date: datetime, max_players: int, members: List[Memb
 
     embed.add_field(name="Registered", value=get_member_string())
 
-    embed.set_footer(text=f"Last updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    embed.set_footer(
+        text=f"Last updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
     return embed
 
@@ -72,6 +76,7 @@ number_emojis = [
     "🔟"]
 
 cancel_emoji = "❌"
+
 
 async def send_and_print(channel: discord.TextChannel, message):
     print(message)

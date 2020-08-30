@@ -7,6 +7,7 @@ bot = commands.Bot(command_prefix=discord.ext.commands.when_mentioned)
 
 bot.add_cog(Teamo(bot))
 
+
 @bot.event
 async def on_ready():
     print(f"Connected as {bot}")

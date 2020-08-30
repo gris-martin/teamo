@@ -7,6 +7,7 @@ import uuid
 
 import models
 
+
 class Database:
     def __init__(self, db_name: str):
         self.db_name: str = db_name
@@ -46,7 +47,6 @@ class Database:
             )
             await db.commit()
 
-
     async def insert_member_raw(self, db, entry_id: int, member: models.Member):
         await db.execute(
             "INSERT INTO members VALUES (?, ?, ?, ?)",
@@ -62,7 +62,6 @@ class Database:
     async def insert_member(self, entry_id: int, member: models.Member):
         async with aiosqlite.connect(self.db_name) as db:
             await self.insert_member_raw(db, entry_id, member)
-
 
     async def edit_or_add_member(self, entry_id: int, member: models.Member) -> int:
         '''Adds the Member member to the members table if it doesn't exist, or
@@ -105,12 +104,6 @@ class Database:
             await db.commit()
             return member_row[3]
 
-    # async def delete_member(self, entry: models.Entry, discord_user_id: int):
-    #     async with aiosqlite.connect(self.db_name) as db:
-    #         await db.execute(
-    #             "DELETE FROM members WHERE "
-    #         )
-
     async def get_entry(self, message_id: int) -> models.Entry:
         async with aiosqlite.connect(self.db_name) as db:
             entry_cursor = await db.execute(
@@ -137,16 +130,11 @@ async def main():
     db = Database(f'{uuid.uuid4()}.db')
     print(f"Created db: {db.db_name}")
     await db.init()
-    # await db.init()
     entry1 = models.Entry(1, 0, 0, "Martin spel", datetime.now(), 5)
     entry2 = models.Entry(2, 0, 0, "Martin spel", datetime.now(), 5)
-    # entry3 = models.Entry("Martin spel", datetime.now(), 5, 3, 0)
-    # entry4 = models.Entry("Martin spel", datetime.now(), 5, 4, 0)
 
     await db.insert_entry(entry1)
     await db.insert_entry(entry2)
-    # await db.insert_entry(entry3)
-    # await db.insert_entry(entry4)
 
     member1 = models.Member(1, "Martin 1", 2)
     member2 = models.Member(2, "Martin 2", 3)
@@ -158,55 +146,6 @@ async def main():
 
     entry_get = await db.get_entry(entry1.discord_message_id)
     print(entry_get)
-    # member1 = models.Member(1, "Martin 1", 2)
 
 if __name__ == "__main__":
     asyncio.run(main())
-
-
-
-# class Member:
-#     id: int
-#     discord_user_id: int
-#     num_players: int
-#     post_id: int
-
-# class DiscordMessage:
-#     channel_id: int
-#     message_id: int
-
-# class Entry:
-#     id: int
-#     message: DiscordMessage
-#     # message: discord.Message
-#     game: str
-#     end_date: datetime.datetime
-#     max_players: int
-
-#     def __init__(self):
-#         print("hej")
-
-
-
-
-
-# async def main():
-#     async with aiosqlite.connect("martin.db") as db:
-#         async with db.cursor() as cursor:
-#             await cursor.execute('''CREATE TABLE IF NOT EXISTS stocks (
-#                 date text,
-#                 trans text,
-#                 symbol text,
-#                 qty real,
-#                 price real)''')
-#             await cursor.execute("INSERT INTO stocks VALUES ('2006-01-05','BUY','RHAT',100,35.14)")
-#             # await cursor.execute('''CREATE TABLE martin (
-#             #     id INTEGER PRIMARY KEY
-#             #     name TEXT
-#             #     number REAL
-#             #     )''')
-
-#             # await cursor.execute("INSERT INTO martin VALUES (1, 'mm', 2.14)")
-#         await db.commit()
-
-# asyncio.run(main())

@@ -14,6 +14,7 @@ from database import Database
 import asyncio
 from utils import send_and_print
 
+
 class Teamo(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -52,7 +53,8 @@ class Teamo(commands.Cog):
         # If number emoji: Add or edit member, remove old reactions, update message
         async with self.locks[message_id]:
             num_players = utils.number_emojis.index(emoji.name) + 1
-            member = models.Member(payload.member.id, payload.member.display_name, num_players)
+            member = models.Member(
+                payload.member.id, payload.member.display_name, num_players)
             previous_num_players = await self.db.edit_or_add_member(message_id, member)
 
             # Do not have to remove any reactions if the user wasn't registered before
@@ -63,7 +65,8 @@ class Teamo(commands.Cog):
             channel: discord.TextChannel = await self.bot.fetch_channel(payload.channel_id)
             message: discord.Message = await channel.fetch_message(message_id)
             previous_emoji = utils.number_emojis[previous_num_players-1]
-            old_reaction = next((r for r in message.reactions if r.emoji == previous_emoji), None)
+            old_reaction = next(
+                (r for r in message.reactions if r.emoji == previous_emoji), None)
             await old_reaction.remove(payload.member)
 
             # TODO: Update message
@@ -73,7 +76,7 @@ class Teamo(commands.Cog):
     async def update_message(self, entry: models.Entry):
         channel: discord.TextChannel = await self.bot.fetch_channel(entry.discord_channel_id)
         message: discord.Message = await channel.fetch_message(entry.discord_message_id)
-        await message.edit(embed = utils.create_embed(entry.game, entry.start_date, entry.max_players, entry.members))
+        await message.edit(embed=utils.create_embed(entry.game, entry.start_date, entry.max_players, entry.members))
 
     @commands.command()
     async def create(self, ctx: discord.ext.commands.Context, *, arg: str):
@@ -121,7 +124,8 @@ class Teamo(commands.Cog):
         message: discord.Message = await ctx.send(embed=embed)
 
         # Create database entry
-        entry = models.Entry(message.id, ctx.channel.id, ctx.guild.id, game, date, max_players)
+        entry = models.Entry(message.id, ctx.channel.id,
+                             ctx.guild.id, game, date, max_players)
         await self.db.insert_entry(entry)
 
         self.locks[entry.discord_message_id] = asyncio.Lock()
