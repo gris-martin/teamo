@@ -1,7 +1,6 @@
 import discord
 from discord.ext import commands
 # import dateparser
-import gettext
 import re
 from dateparser.search import search_dates
 from datetime import datetime, timedelta
