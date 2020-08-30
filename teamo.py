@@ -14,6 +14,7 @@ from database import Database
 import asyncio
 from utils import send_and_print
 import config
+from teams import create_finish_embed
 
 
 class Teamo(commands.Cog):
@@ -56,7 +57,7 @@ class Teamo(commands.Cog):
                 if entry.start_date > datetime.now():
                     continue
                 channel = await self.bot.fetch_channel(entry.discord_channel_id)
-                await utils.create_finish_embed(channel, entry)
+                await create_finish_embed(channel, entry)
                 await self.delete_entry(entry.discord_message_id)
             await asyncio.sleep(config.finish_check_interval)
 
