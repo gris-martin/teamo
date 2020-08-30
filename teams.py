@@ -48,8 +48,8 @@ class Team:
     def get_member_string(self) -> str:
         member_string = ""
         for member in self.members:
-            member_string += f"{member.discord_user_name} ({member.num_players})"
-        return member_string
+            member_string += f"<@{member.discord_user_id}> ({member.num_players})\n"
+        return member_string[:-1]
 
 
 def create_teams(entry: Entry) -> List[Team]:
@@ -77,7 +77,7 @@ def create_teams(entry: Entry) -> List[Team]:
         for team in teams:
             tmp_teams.append(team.copy())
         for member in members:
-            tmp_teams.sort(key=lambda e: e.num_players)
+            tmp_teams.sort(key=lambda e: e.get_num_players())
             for team in tmp_teams:
                 if (team.get_num_players() + member.num_players) > entry.max_players:
                     continue
@@ -107,7 +107,8 @@ async def create_finish_embed(channel: discord.TextChannel, entry: Entry):
     for team in teams:
         embed.add_field(
             name=f"{team.name} ({team.get_num_players()} players)",
-            value=team.get_member_string()
+            value=team.get_member_string(),
+            inline=False
         )
 
     await channel.send(embed=embed)

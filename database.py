@@ -27,7 +27,6 @@ class Database:
             await db.execute('''CREATE TABLE IF NOT EXISTS members (
                 entry_id integer,
                 member_id integer,
-                member_name text,
                 num_players integer,
                 primary key (member_id, entry_id)
                 foreign key (entry_id) references entries (entry_id)
@@ -79,11 +78,10 @@ class Database:
 
     async def insert_member_raw(self, db, entry_id: int, member: models.Member):
         await db.execute(
-            "INSERT INTO members VALUES (?, ?, ?, ?)",
+            "INSERT INTO members VALUES (?, ?, ?)",
             (
                 entry_id,
                 member.discord_user_id,
-                member.discord_user_name,
                 member.num_players
             )
         )
@@ -166,9 +164,9 @@ async def main():
     await db.insert_entry(entry1)
     await db.insert_entry(entry2)
 
-    member1 = models.Member(1, "Martin 1", 2)
-    member2 = models.Member(2, "Martin 2", 3)
-    member3 = models.Member(1, "Martin 1", 1)
+    member1 = models.Member(1, 2)
+    member2 = models.Member(2, 3)
+    member3 = models.Member(1, 1)
 
     await db.insert_member(entry1.discord_message_id, member1)
     await db.insert_member(entry1.discord_message_id, member2)

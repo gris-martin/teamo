@@ -103,7 +103,7 @@ class Teamo(commands.Cog):
         async with self.locks[message_id]:
             num_players = utils.number_emojis.index(emoji.name) + 1
             member = models.Member(
-                payload.member.id, payload.member.display_name, num_players)
+                payload.member.id, num_players)
             previous_num_players = await self.db.edit_or_add_member(message_id, member)
 
             # Do not have to remove any reactions if the user wasn't registered before

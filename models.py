@@ -6,7 +6,6 @@ from dataclasses import dataclass, field
 
 class Member(NamedTuple):
     discord_user_id: int
-    discord_user_name: str
     num_players: int
 
 

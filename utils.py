@@ -22,20 +22,20 @@ def get_date_string(date: datetime, show_date: bool = True) -> str:
 def get_timedelta_string(td: timedelta) -> str:
     tot_secs = floor(td.total_seconds())
     if tot_secs < 60:
-        return f"<1min"
+        return f"<1 min"
 
     mins = floor(tot_secs / 60)
     if tot_secs < 60 * 60:
-        return f"{mins}min"
+        return f"{mins} min"
 
     hours = floor(mins / 60)
     mins -= hours * 60
     if (hours < 24):
-        return f"{hours}h {mins}min"
+        return f"{hours} h {mins} min"
 
     days = floor(hours/24)
     hours -= days * 24
-    return f"{days}days {hours}h {mins}min"
+    return f"{days} days {hours} h {mins} min"
 
 
 def create_embed(entry: Entry, is_cancelling: bool = False) -> discord.Embed:
@@ -46,19 +46,20 @@ def create_embed(entry: Entry, is_cancelling: bool = False) -> discord.Embed:
     )
     embed.color = discord.Color.purple()
     tl: timedelta = entry.start_date - datetime.now()
-    embed.add_field(name="Time left", value=get_timedelta_string(tl))
-    embed.add_field(name="Players per team", value=entry.max_players)
+    embed.add_field(name="Time left",
+                    value=get_timedelta_string(tl), inline=False)
+    embed.add_field(name="Players per team",
+                    value=entry.max_players, inline=False)
 
     def get_member_string():
-        if len(entry.members) > 0:
-            member_string = ""
-            for member in entry.members:
-                member_string += f"{member.discord_user_name} (**{member.num_players}**), "
-                return member_string[0:-2]
-        else:
+        if len(entry.members) < 1:
             return "No one has registered yet"
+        member_string = ""
+        for member in entry.members:
+            member_string += f"<@{member.discord_user_id}> (**{member.num_players}**)\n"
+        return member_string[0:-1]
 
-    embed.add_field(name="Registered", value=get_member_string())
+    embed.add_field(name="Registered", value=get_member_string(), inline=False)
 
     if is_cancelling:
         embed.add_field(
