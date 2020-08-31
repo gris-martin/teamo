@@ -1,17 +1,19 @@
-import discord
-from discord.ext import commands
-# import dateparser
 import re
 from dateparser.search import search_dates
 from datetime import datetime, timedelta
 from typing import List, Dict
 import time
+import asyncio
+import traceback
+
+# Third party imports
+import discord
+from discord.ext import commands
 
 # Internal imports
 import models
 import utils
 from database import Database
-import asyncio
 from utils import send_and_print
 import config
 from teams import create_finish_embed
@@ -45,9 +47,12 @@ class Teamo(commands.Cog):
 
     async def update_timer(self):
         while True:
-            entries = await self.db.get_all_entries()
-            for entry in entries:
-                await self.update_message(entry)
+            try:
+                entries = await self.db.get_all_entries()
+                for entry in entries:
+                    await self.update_message(entry)
+            except Exception:
+                traceback.print_exc()
             await asyncio.sleep(config.update_interval)
 
     async def finish_timer(self):
