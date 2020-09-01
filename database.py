@@ -76,6 +76,17 @@ class Database:
             )
             await db.commit()
 
+    async def delete_entries(self, message_ids: List[int]):
+        message_ids_tup = list(map(lambda id: (id,), message_ids))
+        async with aiosqlite.connect(self.db_name) as db:
+            await db.executemany(
+                "DELETE FROM entries WHERE entry_id=?", message_ids_tup
+            )
+            await db.executemany(
+                "DELETE FROM members WHERE entry_id=?", message_ids_tup
+            )
+            await db.commit()
+
     async def insert_member_raw(self, db, entry_id: int, member: models.Member):
         await db.execute(
             "INSERT INTO members VALUES (?, ?, ?)",
@@ -130,7 +141,7 @@ class Database:
                 )
             )
             await db.commit()
-            return member_row[3]
+            return member_row[2]
 
     async def get_entry(self, message_id: int) -> models.Entry:
         async with aiosqlite.connect(self.db_name) as db:

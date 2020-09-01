@@ -12,11 +12,11 @@ def get_date_string(date: datetime, show_date: bool = True) -> str:
         return date.strftime("%H:%M:%S")
 
     if date.date() == datetime.today().date():
-        return "today " + date.strftime("%H:%M:%S")
+        return date.strftime("%H:%M:%S") + " today"
     elif date.date() == datetime.today().date() + timedelta(days=1):
-        return "tomorrow " + date.strftime("%H:%M:%S")
+        return date.strftime("%H:%M:%S") + " tomorrow"
     else:
-        return date.strftime("%Y-%m-%d %H:%M:%S")
+        return date.strftime("%H:%M:%S %Y-%m-%d")
 
 
 def get_timedelta_string(td: timedelta) -> str:
