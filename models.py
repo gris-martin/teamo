@@ -1,8 +1,8 @@
 from typing import List, NamedTuple
 from datetime import datetime
-import discord
 from dataclasses import dataclass, field
 
+import discord
 
 class Member(NamedTuple):
     discord_user_id: int
