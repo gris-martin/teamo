@@ -98,17 +98,19 @@ def create_teams(entry: Entry) -> List[Team]:
     return teams
 
 
-async def create_finish_embed(channel: discord.TextChannel, entry: Entry):
+def create_finish_embed(entry: Entry):
     embed = discord.Embed(
         title=f"**{entry.game} @ {get_date_string(entry.start_date, False)}**"
     )
 
-    teams = create_teams(entry)
-    for team in teams:
-        embed.add_field(
-            name=f"{team.name} ({team.get_num_players()} players)",
-            value=team.get_member_string(),
-            inline=False
-        )
-
-    await channel.send(embed=embed)
+    if len(entry.members) == 0:
+        embed.add_field(name="Player list empty", value="No one registered for the game :c Maybe next time!")
+    else:
+        teams = create_teams(entry)
+        for team in teams:
+            embed.add_field(
+                name=f"{team.name} ({team.get_num_players()} players)",
+                value=team.get_member_string(),
+                inline=False
+            )
+    return embed

@@ -81,7 +81,7 @@ class Teamo(commands.Cog):
                 if entry.start_date > datetime.now():
                     continue
                 channel = await self.bot.fetch_channel(entry.discord_channel_id)
-                await create_finish_embed(channel, entry)
+                await channel.send(create_finish_embed(entry))
                 await self.delete_entry(entry.discord_message_id)
             await asyncio.sleep(config.finish_check_interval)
 
