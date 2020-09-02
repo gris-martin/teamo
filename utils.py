@@ -56,7 +56,7 @@ def create_embed(entry: Entry, is_cancelling: bool = False) -> discord.Embed:
             return "No one has registered yet"
         member_string = ""
         for member in entry.members:
-            member_string += f"<@{member.discord_user_id}> (**{member.num_players}**)\n"
+            member_string += f"<@{member.user_id}> (**{member.num_players}**)\n"
         return member_string[0:-1]
 
     embed.add_field(name="Registered", value=get_member_string(), inline=False)
@@ -69,8 +69,8 @@ def create_embed(entry: Entry, is_cancelling: bool = False) -> discord.Embed:
         )
 
     footer_text = ""
-    if entry.discord_message_id is not None:
-        footer_text += f"ID: {entry.discord_message_id}\n"
+    if entry.message_id is not None:
+        footer_text += f"ID: {entry.message_id}\n"
     footer_text += f"Last updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
     if config.update_interval > 0:
         footer_text += f" (updated every {config.update_interval} seconds)"

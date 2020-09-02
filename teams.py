@@ -48,7 +48,7 @@ class Team:
     def get_member_string(self) -> str:
         member_string = ""
         for member in self.members:
-            member_string += f"<@{member.discord_user_id}> ({member.num_players})\n"
+            member_string += f"<@{member.user_id}> ({member.num_players})\n"
         return member_string[:-1]
 
 
@@ -104,7 +104,8 @@ def create_finish_embed(entry: Entry):
     )
 
     if len(entry.members) == 0:
-        embed.add_field(name="Player list empty", value="No one registered for the game :c Maybe next time!")
+        embed.add_field(name="Player list empty",
+                        value="No one registered for the game :c Maybe next time!")
     else:
         teams = create_teams(entry)
         for team in teams:

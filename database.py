@@ -1,10 +1,11 @@
 import asyncio
-import aiosqlite
-import discord
 from datetime import datetime
-from dataclasses import dataclass
+from dataclasses import dataclass, astuple
 import uuid
 from typing import List
+from sqlite3 import PARSE_DECLTYPES
+
+import aiosqlite
 
 import models
 
@@ -36,26 +37,19 @@ class Database:
         async with aiosqlite.connect(self.db_name) as db:
             await db.execute(
                 "INSERT INTO entries VALUES (?, ?, ?, ?, ?, ?)",
-                (
-                    entry.discord_message_id,
-                    entry.discord_channel_id,
-                    entry.discord_server_id,
-                    entry.game,
-                    entry.start_date,
-                    entry.max_players
-                )
+                astuple(entry)[:-1]
             )
             await db.commit()
 
     async def get_all_entries(self) -> List[models.Entry]:
-        async with aiosqlite.connect(self.db_name) as db:
+        async with aiosqlite.connect(self.db_name, detect_types=PARSE_DECLTYPES) as db:
             # Get entries
             entry_cursor = await db.execute("SELECT * FROM entries")
             entry_rows = await entry_cursor.fetchall()
             entries = dict()
             for row in entry_rows:
                 entry = models.Entry(*row)
-                entries[entry.discord_message_id] = entry
+                entries[entry.message_id] = entry
 
             # Append members
             member_cursor = await db.execute("SELECT * FROM members")
@@ -92,7 +86,7 @@ class Database:
             "INSERT INTO members VALUES (?, ?, ?)",
             (
                 entry_id,
-                member.discord_user_id,
+                member.user_id,
                 member.num_players
             )
         )
@@ -116,7 +110,7 @@ class Database:
                 AND member_id=?''',
                 (
                     entry_id,
-                    member.discord_user_id
+                    member.user_id
                 )
             )
             member_row = await member_cursor.fetchone()
@@ -137,14 +131,14 @@ class Database:
                 (
                     member.num_players,
                     entry_id,
-                    member.discord_user_id
+                    member.user_id
                 )
             )
             await db.commit()
             return member_row[2]
 
     async def get_entry(self, message_id: int) -> models.Entry:
-        async with aiosqlite.connect(self.db_name) as db:
+        async with aiosqlite.connect(self.db_name, detect_types=PARSE_DECLTYPES) as db:
             entry_cursor = await db.execute(
                 "SELECT * FROM entries WHERE entry_id=?", (message_id,)
             )
@@ -179,17 +173,17 @@ async def main():
     member2 = models.Member(2, 3)
     member3 = models.Member(1, 1)
 
-    await db.insert_member(entry1.discord_message_id, member1)
-    await db.insert_member(entry1.discord_message_id, member2)
-    await db.insert_member(entry2.discord_message_id, member3)
+    await db.insert_member(entry1.message_id, member1)
+    await db.insert_member(entry1.message_id, member2)
+    await db.insert_member(entry2.message_id, member3)
 
-    entry_get = await db.get_entry(entry1.discord_message_id)
+    entry_get = await db.get_entry(entry1.message_id)
     entries = await db.get_all_entries()
     print(len(entries))
     print(entry_get)
 
-    await db.delete_entry(entry1.discord_message_id)
-    entry_get = await db.get_entry(entry1.discord_message_id)
+    await db.delete_entry(entry1.message_id)
+    entry_get = await db.get_entry(entry1.message_id)
     entries = await db.get_all_entries()
     print(len(entries))
     print(entry_get)

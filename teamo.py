@@ -24,14 +24,16 @@ class Teamo(commands.Cog):
         self.bot = bot
         self.db = Database("teamo.db")
         asyncio.run(self.db.init())
-        self.entries: Dict[int, models.RuntimeEntry] = dict()
+        self.cached_messages: Dict[int, discord.Message] = dict()
+        self.locks: Dict[int, asyncio.Lock] = dict()
+        self.cancel_tasks: Dict[int, asyncio.Task] = dict()
         self.startup_done: asyncio.Event
 
     async def delete_entry(self, message_id: int):
-        async with self.entries[message_id].lock:
+        async with self.locks[message_id]:
             # Delete message from discord
-            message = self.entries[message_id].message
-            await message.delete()
+            await self.cached_messages[message_id].delete()
+            self.cached_messages[message_id] = None
 
             # Delete message from db
             await self.db.delete_entry(message_id)
@@ -46,23 +48,27 @@ class Teamo(commands.Cog):
     async def update_message(self, arg):
         if type(arg) is models.Entry:
             entry = arg
-            message_id = entry.discord_message_id
+            message_id = entry.message_id
         elif type(arg) is int:
             entry = await self.db.get_entry(arg)
             message_id = arg
         else:
             raise Exception(
                 f"Unknown argument type to update_message: {type(arg)}. Value: {arg}")
-        is_cancelling = True if self.entries[message_id].cancel_task is not None else False
+        is_cancelling = (
+            message_id in self.cancel_tasks
+            and self.cancel_tasks[message_id] is not None
+            and not self.cancel_tasks[message_id].done()
+        )
         try:
-            message = self.entries[entry.discord_message_id].message
+            message = self.cached_messages[message_id]
             await message.edit(embed=utils.create_embed(entry, is_cancelling))
         except discord.NotFound:
             await send_and_print(
                 message.channel,
-                f"WARNING: Attempted to update a message (ID: {entry.discord_message_id}) that has already been deleted. Deleting message from database."
+                f"WARNING: Attempted to update a message (ID: {entry.message_id}) that has already been deleted. Deleting message from database."
             )
-            await self.db.delete_entry(entry.discord_message_id)
+            await self.db.delete_entry(entry.message_id)
 
     async def update_timer(self):
         while True:
@@ -80,10 +86,15 @@ class Teamo(commands.Cog):
             for entry in entries:
                 if entry.start_date > datetime.now():
                     continue
-                channel = await self.bot.fetch_channel(entry.discord_channel_id)
-                await channel.send(create_finish_embed(entry))
-                await self.delete_entry(entry.discord_message_id)
+                channel = await self.bot.fetch_channel(entry.channel_id)
+                await channel.send(embed=create_finish_embed(entry))
+                await self.delete_entry(entry.message_id)
             await asyncio.sleep(config.finish_check_interval)
+
+    async def sync_message(self, message_id: int):
+        old_message = self.cached_messages[message_id]
+        channel = old_message.channel
+        self.cached_messages[message_id] = await channel.fetch_message(message_id)
 
     @commands.Cog.listener()
     async def on_connect(self):
@@ -94,12 +105,16 @@ class Teamo(commands.Cog):
         entries = await self.db.get_all_entries()
         deleted_ids = []
         for entry in entries:
+            channel_id = entry.channel_id
+            message_id = entry.message_id
             try:
-                self.entries[entry.discord_message_id] = await models.RuntimeEntry.from_dbentry(entry, self.bot)
+                channel: discord.TextChannel = self.bot.get_channel(channel_id)
+                self.cached_messages[message_id] = await channel.fetch_message(message_id)
+                self.locks[message_id] = asyncio.Lock()
             except discord.NotFound:
                 print(
-                    f"Discord message for database entry with message id {entry.discord_message_id} does not exist. Removing entry from database.")
-                deleted_ids.append(entry.discord_message_id)
+                    f"Discord message for database entry with message id {entry.message_id} does not exist. Removing entry from database.")
+                deleted_ids.append(entry.message_id)
 
         await self.db.delete_entries(deleted_ids)
 
@@ -129,12 +144,13 @@ class Teamo(commands.Cog):
         # If cancel emoji: Start cancel procedure
         if emoji.name == utils.cancel_emoji:
             cancel_task = asyncio.create_task(self.cancel_after(message_id))
-            self.entries[message_id].cancel_task = cancel_task
+            self.cancel_tasks[message_id] = cancel_task
             await self.update_message(message_id)
+            await self.sync_message(message_id)
             return
 
         # If number emoji: Add or edit member, remove old reactions, update message
-        async with self.entries[message_id].lock:
+        async with self.locks[message_id]:
             num_players = utils.number_emojis.index(emoji.name) + 1
             member = models.Member(
                 payload.member.id, num_players)
@@ -143,28 +159,29 @@ class Teamo(commands.Cog):
             # Do not have to remove any reactions if the user wasn't registered before
             # or if the previous entry was the same as the current one (somehow)
             if previous_num_players is None or previous_num_players == num_players:
+                await self.sync_message(message_id)
                 await self.update_message(message_id)
                 return
 
+            # Update message
+            await self.update_message(message_id)
+
             # Delete old reactions
-            # channel: discord.TextChannel = await self.bot.fetch_channel(payload.channel_id)
-            # message: discord.Message = await channel.fetch_message(message_id)
-            await self.entries[message_id].sync_message()
-            message = self.entries[message_id].message
+            message = self.cached_messages[message_id]
             previous_emoji = utils.number_emojis[previous_num_players-1]
             old_reaction = next(
                 (r for r in message.reactions if r.emoji == previous_emoji),
                 None
             )
             await old_reaction.remove(payload.member)
-            await self.entries[message_id].sync_message()
-
-            # Update message
-            await self.update_message(message_id)
+            await self.sync_message(message_id)
 
     @commands.Cog.listener()
     async def on_raw_reaction_remove(self, payload: discord.RawReactionActionEvent):
         await self.startup_done.wait()
+        message_id = payload.message_id
+        await self.sync_message(message_id)
+
         if payload.user_id == self.bot.user.id:
             return
 
@@ -174,18 +191,17 @@ class Teamo(commands.Cog):
             return
 
         # Make sure the message reacted to is a Teamo message (exists in db)
-        message_id = payload.message_id
         db_entry = await self.db.get_entry(message_id)
         if (db_entry is None):
             return
 
         # If cancel emoji: Abort cancel procedure
         if emoji.name == utils.cancel_emoji:
-            cancel_task = self.entries[message_id].cancel_task
+            cancel_task = self.cancel_tasks[message_id]
             if cancel_task is None or cancel_task.done():
                 return
             cancel_task.cancel()
-            self.entries[message_id].cancel_task = None
+            self.cancel_tasks[message_id] = None
             await self.update_message(db_entry)
 
     @commands.command()
@@ -228,34 +244,33 @@ class Teamo(commands.Cog):
             return
 
         # Create message and send to Discord
-        initial_entry = models.Entry(
+        entry = models.Entry(
             game=game,
             start_date=date,
             max_players=max_players
         )
-        embed = utils.create_embed(initial_entry)
+        embed = utils.create_embed(entry)
         message: discord.Message = await ctx.send(embed=embed)
+        self.cached_messages[message.id] = message
 
         # Create database and runtime entries
-        entry = models.Entry(
-            message_id=message.id,
-            channel_id=ctx.channel.id,
-            server_id=ctx.guild.id,
-            game=game,
-            start_date=date,
-            max_players=max_players
-        )
+        entry.message_id = message.id
+        entry.channel_id = ctx.channel.id
+        entry.server_id = ctx.guild.id
         await self.db.insert_entry(entry)
-        self.entries[message.id] = await models.RuntimeEntry.from_dbentry(entry, self.bot)
 
         # Update message again to show ID
         # Add reactions
         await self.update_message(entry)
-        async with self.entries[message.id].lock:
+        self.locks[message.id] = asyncio.Lock()
+        async with self.locks[message.id]:
             for i in range(min(max_players-1, 10)):
                 await message.add_reaction(utils.number_emojis[i])
 
             await message.add_reaction(utils.cancel_emoji)
+
+        channel = self.bot.get_channel(entry.channel_id)
+        self.cached_messages[message.id] = await channel.fetch_message(message.id)
 
         # Remove initial message
         if config.user_message_delete_delay >= 0:
