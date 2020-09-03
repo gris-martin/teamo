@@ -56,5 +56,5 @@ jobs:
         port: ${{ secrets.DEPLOY_PORT }}
         script: |
           docker build -t teamo-master teamo/master/src/
-          python teamo/master/src/create_database.py teamo/master/db/teamo.db
+          python3 teamo/master/src/create_database.py teamo/master/db/teamo.db
           docker run -e TEAMO_BOT_TOKEN=${{ secrets.TEAMO_BOT_TOKEN_MASTER }} -d -v $PWD/teamo/master/db/teamo.db:/teamo/db/teamo.db --name teamo-master teamo-master-instance
