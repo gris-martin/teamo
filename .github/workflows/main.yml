@@ -24,7 +24,7 @@ jobs:
           docker rm teamo-master || true
     - name: Debug outputs
       run: |
-        ll teamo/master/src
+        ls -al teamo/master/src
         git status
         git branch
     - name: Copy Teamo to server
