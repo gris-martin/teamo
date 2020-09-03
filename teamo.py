@@ -5,6 +5,10 @@ from typing import List, Dict
 import time
 import asyncio
 import traceback
+from pathlib import Path
+import os
+import sys
+import argparse
 
 # Third party imports
 import discord
@@ -20,9 +24,10 @@ from teams import create_finish_embed
 
 
 class Teamo(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot, database):
         self.bot = bot
-        self.db = Database("teamo.db")
+        Path("db").mkdir(exist_ok=True)
+        self.db = Database("db/teamo.db")
         asyncio.run(self.db.init())
         self.cached_messages: Dict[int, discord.Message] = dict()
         self.locks: Dict[int, asyncio.Lock] = dict()
@@ -275,3 +280,30 @@ class Teamo(commands.Cog):
         # Remove initial message
         if config.user_message_delete_delay >= 0:
             await ctx.message.delete(delay=config.user_message_delete_delay)
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Start the Teamo bot.')
+    parser.add_argument(
+        "--database",
+        dest="database",
+        type=str,
+        nargs=1,
+        default="db/teamo.db",
+        help="specify the location of the database to use (default: db/teamo.db)"
+    )
+    args = parser.parse_args()
+
+    bot = commands.Bot(command_prefix=commands.when_mentioned)
+    bot.add_cog(Teamo(bot, args.database))
+
+    @bot.event
+    async def on_ready():
+        print(f"Connected as {bot}")
+
+    token = os.environ["TEAMO_BOT_TOKEN"]
+    if (token is None):
+        print("Missing bot token. Set the TEAMO_BOT_TOKEN environment variable to the bot token found on the Discord Developer Portal.")
+        sys.exit(1)
+
+    bot.run(token)
