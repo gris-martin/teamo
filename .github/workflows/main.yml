@@ -30,8 +30,8 @@ jobs:
         passphrase: ${{ secrets.DEPLOY_PASSPHRASE }}
         key: ${{ secrets.DEPLOY_KEY }}
         port: ${{ secrets.DEPLOY_PORT }}
-        source: '*/*.*, *.*'
-        target: "teamo/master/src"
+        source: '*'
+        target: teamo/master/src
     - name: Debug outputs
       uses: appleboy/ssh-action@master
       with:
