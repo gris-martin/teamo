@@ -1,4 +1,4 @@
-FROM python:3.8.5-alpine
+FROM python:3.8.5-slim
 
 RUN mkdir -p /teamo/db
 WORKDIR /teamo
