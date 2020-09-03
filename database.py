@@ -15,6 +15,7 @@ class Database:
         self.db_name: str = db_name
 
     async def init(self):
+        print(f"Creating db {self.db_name}")
         async with aiosqlite.connect(self.db_name) as db:
             await db.execute('''CREATE TABLE IF NOT EXISTS entries (
                 entry_id integer primary key,
