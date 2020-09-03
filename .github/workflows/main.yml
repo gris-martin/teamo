@@ -34,7 +34,9 @@ jobs:
         target: "teamo/master/src"
     - name: Debug outputs
       run: |
-        ls -al teamo/master/src
+        echo $PWD
+        cd teamo/master/src
+        ls -al
         git status
         git branch
     - name: Start Docker container
