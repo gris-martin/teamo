@@ -15,7 +15,7 @@ args = parser.parse_args()
 
 
 async def main():
-    print(f"Creating path {Path(args.path[0]).parent}")
+    print(f"Creating path {args.path[0].parent}")
     Path(args.path[0]).parent.mkdir(exist_ok=True, parents=True)
     db = Database(args.path[0])
     await db.init()
