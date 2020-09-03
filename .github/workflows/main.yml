@@ -33,12 +33,19 @@ jobs:
         source: '*/*.*, *.*'
         target: "teamo/master/src"
     - name: Debug outputs
-      run: |
-        echo $PWD
-        cd teamo/master/src
-        ls -al
-        git status
-        git branch
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.DEPLOY_HOST }}
+        username: ${{ secrets.DEPLOY_USERNAME }}
+        passphrase: ${{ secrets.DEPLOY_PASSPHRASE }}
+        key: ${{ secrets.DEPLOY_KEY }}
+        port: ${{ secrets.DEPLOY_PORT }}
+        script: |
+          echo $PWD
+          cd teamo/master/src
+          ls -al
+          git status
+          git branch
     - name: Start Docker container
       uses: appleboy/ssh-action@master
       with:
