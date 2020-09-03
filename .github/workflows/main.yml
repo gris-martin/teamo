@@ -1,0 +1,46 @@
+name: Teamo main branch deployment
+
+on:
+    push:
+        branches: [ main ]
+
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Clean up Teamo previous deploy
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.DEPLOY_HOST }}
+        username: ${{ secrets.DEPLOY_USERNAME }}
+        passphrase: ${{ secrets.DEPLOY_PASSPHRASE }}
+        key: ${{ secrets.DEPLOY_KEY }}
+        port: ${{ secrets.DEPLOY_PORT }}
+        script: |
+          rm -r teamo/main/src
+          docker stop teamo-main-instance || true
+          docker rm teamo-main-instance || true
+    - name: Copy Teamo to server
+      uses: appleboy/scp-action@master
+      with:
+        host: ${{ secrets.DEPLOY_HOST }}
+        username: ${{ secrets.DEPLOY_USERNAME }}
+        passphrase: ${{ secrets.DEPLOY_PASSPHRASE }}
+        key: ${{ secrets.DEPLOY_KEY }}
+        port: ${{ secrets.DEPLOY_PORT }}
+        source: '*'
+        target: teamo/main/src
+    - name: Start Docker container
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.DEPLOY_HOST }}
+        username: ${{ secrets.DEPLOY_USERNAME }}
+        passphrase: ${{ secrets.DEPLOY_PASSPHRASE }}
+        key: ${{ secrets.DEPLOY_KEY }}
+        port: ${{ secrets.DEPLOY_PORT }}
+        script: |
+          docker build -t teamo-main teamo/main/src/
+          python3 teamo/main/src/create_database.py teamo/main/db/teamo.db
+          docker run -e TEAMO_BOT_TOKEN=${{ secrets.TEAMO_BOT_TOKEN_MAIN }} -d -v $PWD/teamo/main/db/teamo.db:/teamo/db/teamo.db --name teamo-main-instance teamo-main
