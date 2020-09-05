@@ -20,5 +20,10 @@ setup(
         'aiosqlite',
         'dateparser',
         'discord.py~=1.4'
-    ]
+    ],
+    entry_points={
+        'console_scripts': [
+            'teamo = teamo.__main__.main'
+        ]
+    }
 )
