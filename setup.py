@@ -23,7 +23,7 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'teamo = teamo.__main__.main'
+            'teamo = teamo.__main__:main'
         ]
     }
 )
