@@ -1,14 +1,16 @@
 from typing import List
 from math import floor
 import random
+import pathlib
 
 import discord
 
 from teamo.models import Member, Entry
 from teamo.utils import get_date_string
 
-noun_filename = "nouns.list"
-adjectives_filename = "adjectives.list"
+current_filepath = pathlib.Path(__file__).parent.absolute()
+noun_filename = f"{current_filepath}/nouns.list"
+adjectives_filename = f"{current_filepath}/adjectives.list"
 
 
 def generate_name_list(filename: str) -> List[str]:
