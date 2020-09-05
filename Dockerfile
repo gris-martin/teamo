@@ -10,4 +10,4 @@ RUN python3 -m pip install /teamo
 
 VOLUME /teamo/db
 
-CMD ["python3", "-m", "teamo", "/teamo/db"]
+CMD ["python3", "-m", "teamo", "--database", "/teamo/db"]
