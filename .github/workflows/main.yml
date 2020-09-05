@@ -19,6 +19,7 @@ jobs:
         key: ${{ secrets.DEPLOY_KEY }}
         port: ${{ secrets.DEPLOY_PORT }}
         script: |
+          set -e
           rm -r teamo/main/src
           docker stop teamo-main-instance || true
           docker rm teamo-main-instance || true
@@ -41,6 +42,7 @@ jobs:
         key: ${{ secrets.DEPLOY_KEY }}
         port: ${{ secrets.DEPLOY_PORT }}
         script: |
+          set -e
           docker build -t teamo-main teamo/main
           echo $?
           python3 teamo/main/utils/create_database.py teamo/main/db/teamo.db
