@@ -4,8 +4,8 @@ import random
 
 import discord
 
-from models import Member, Entry
-from utils import get_date_string
+from teamo.models import Member, Entry
+from teamo.utils import get_date_string
 
 noun_filename = "nouns.list"
 adjectives_filename = "adjectives.list"

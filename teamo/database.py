@@ -7,8 +7,9 @@ from sqlite3 import PARSE_DECLTYPES
 
 import aiosqlite
 
-import models
+from teamo import models
 
+print("Importing database!")
 
 class Database:
     def __init__(self, db_name: str):

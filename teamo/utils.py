@@ -3,8 +3,9 @@ from typing import List
 from math import floor
 
 import discord
-from models import Member, Entry
-import config
+
+from teamo.models import Member, Entry
+from teamo import config
 
 
 def get_date_string(date: datetime, show_date: bool = True) -> str:

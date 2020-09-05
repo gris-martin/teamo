@@ -15,19 +15,15 @@ import discord
 from discord.ext import commands
 
 # Internal imports
-import models
-import utils
-from database import Database
-from utils import send_and_print
-import config
-from teams import create_finish_embed
+from teamo import models, utils, config, database, teams
+from teamo.utils import send_and_print
 
 
 class Teamo(commands.Cog):
-    def __init__(self, bot, database):
+    def __init__(self, bot, database_name):
         self.bot = bot
         Path("db").mkdir(exist_ok=True)
-        self.db = Database("db/teamo.db")
+        self.db = database.Database(database_name)
         asyncio.run(self.db.init())
         self.cached_messages: Dict[int, discord.Message] = dict()
         self.locks: Dict[int, asyncio.Lock] = dict()
@@ -92,7 +88,7 @@ class Teamo(commands.Cog):
                 if entry.start_date > datetime.now():
                     continue
                 channel = await self.bot.fetch_channel(entry.channel_id)
-                await channel.send(embed=create_finish_embed(entry))
+                await channel.send(embed=teams.create_finish_embed(entry))
                 await self.delete_entry(entry.message_id)
             await asyncio.sleep(config.finish_check_interval)
 
