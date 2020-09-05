@@ -20,7 +20,7 @@ jobs:
         port: ${{ secrets.DEPLOY_PORT }}
         script: |
           set -e
-          rm -r teamo/main/src
+          rm -r -f teamo/main/src
           docker stop teamo-main-instance || true
           docker rm teamo-main-instance || true
     - name: Copy Teamo to server
