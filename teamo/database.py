@@ -9,8 +9,6 @@ import aiosqlite
 
 from teamo import models
 
-print("Importing database!")
-
 class Database:
     def __init__(self, db_name: str):
         self.db_name: str = db_name
