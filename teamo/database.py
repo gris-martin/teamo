@@ -4,8 +4,6 @@ from dataclasses import dataclass, astuple
 import uuid
 from typing import List
 from sqlite3 import PARSE_DECLTYPES
-from pathlib import Path
-import argparse
 
 import aiosqlite
 
@@ -160,52 +158,34 @@ class Database:
 
 
 async def main():
-    parser = argparse.ArgumentParser(description='Initialize an empty database file.')
-    parser.add_argument(
-        "path",
-        type=str,
-        nargs=1,
-        default="db/teamo.db",
-        help="specify the location of the database to use (default: db/teamo.db)"
-    )
-    args = parser.parse_args()
-
-    Path(args.path[0]).parent.mkdir(exist_ok=True, parents=True)
-    db = Database(args.path[0])
+    # db = Database(':memory:')
+    db = Database(f'{uuid.uuid4()}.db')
+    print(f"Created db: {db.db_name}")
     await db.init()
+    entry1 = models.Entry(1, 0, 0, "Martin spel", datetime.now(), 5)
+    entry2 = models.Entry(2, 0, 0, "Martin spel", datetime.now(), 5)
+
+    await db.insert_entry(entry1)
+    await db.insert_entry(entry2)
+
+    member1 = models.Member(1, 2)
+    member2 = models.Member(2, 3)
+    member3 = models.Member(1, 1)
+
+    await db.insert_member(entry1.message_id, member1)
+    await db.insert_member(entry1.message_id, member2)
+    await db.insert_member(entry2.message_id, member3)
+
+    entry_get = await db.get_entry(entry1.message_id)
+    entries = await db.get_all_entries()
+    print(len(entries))
+    print(entry_get)
+
+    await db.delete_entry(entry1.message_id)
+    entry_get = await db.get_entry(entry1.message_id)
+    entries = await db.get_all_entries()
+    print(len(entries))
+    print(entry_get)
 
 if __name__ == "__main__":
     asyncio.run(main())
-
-# async def main():
-#     # db = Database(':memory:')
-#     db = Database(f'{uuid.uuid4()}.db')
-#     print(f"Created db: {db.db_name}")
-#     await db.init()
-#     entry1 = models.Entry(1, 0, 0, "Martin spel", datetime.now(), 5)
-#     entry2 = models.Entry(2, 0, 0, "Martin spel", datetime.now(), 5)
-
-#     await db.insert_entry(entry1)
-#     await db.insert_entry(entry2)
-
-#     member1 = models.Member(1, 2)
-#     member2 = models.Member(2, 3)
-#     member3 = models.Member(1, 1)
-
-#     await db.insert_member(entry1.message_id, member1)
-#     await db.insert_member(entry1.message_id, member2)
-#     await db.insert_member(entry2.message_id, member3)
-
-#     entry_get = await db.get_entry(entry1.message_id)
-#     entries = await db.get_all_entries()
-#     print(len(entries))
-#     print(entry_get)
-
-#     await db.delete_entry(entry1.message_id)
-#     entry_get = await db.get_entry(entry1.message_id)
-#     entries = await db.get_all_entries()
-#     print(len(entries))
-#     print(entry_get)
-
-# if __name__ == "__main__":
-#     asyncio.run(main())
