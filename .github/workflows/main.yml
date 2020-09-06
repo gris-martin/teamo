@@ -5,6 +5,8 @@ on:
     branches:
       - main
       - deploy
+    paths-ignore:
+      - tests/**
 
 
 # This is not nice and a lot of duplication
