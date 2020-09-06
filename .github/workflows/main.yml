@@ -16,7 +16,7 @@ jobs:
         env:
           GHR: ${{ toJSON(github) }}
       - uses: ./.github/actions/deploy-action
-        if: github.ref == 'refs/main'
+        if: github.ref == 'refs/heads/main'
         with:
           bot-token: ${{ secrets.TEAMO_BOT_TOKEN_MAIN }}
           host: ${{ secrets.DEPLOY_HOST }}
@@ -26,7 +26,7 @@ jobs:
           passphrase: ${{ secrets.DEPLOY_PASSPHRASE }}
           branch: main
       - uses: ./.github/actions/deploy-action
-        if: github.ref == 'refs/deploy'
+        if: github.ref == 'refs/heads/deploy'
         with:
           bot-token: ${{ secrets.TEAMO_BOT_TOKEN_DEPLOY }}
           host: ${{ secrets.DEPLOY_HOST }}
