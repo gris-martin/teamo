@@ -26,7 +26,7 @@ When a `create` command has been sent, a message looking something like this wil
 
 To register for playing, press a number reaction at the bottom, with the number of players who will be joining from your group. E.g. if you and a friend wants to register to be in the same team, you can press the 2️⃣ reaction, and your friend doesn't have to press anything. If you find another friend and want to change the number of players in your group, just press another reaction and the registration will update automatically.
 
-In this example I got some help from some bot friends of mine to demonstrate :)
+In this example I got some help from my bot friends to demonstrate :)
 
 If you want to cancel the registration, press the ❌ reaction. The message will be deleted after 15 seconds.
 
