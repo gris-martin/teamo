@@ -3,9 +3,10 @@ FROM python:3.8.5-slim
 RUN mkdir -p /teamo/db
 WORKDIR /teamo
 
-COPY dist/* /teamo/
+ARG VERSION
+COPY dist/teamo-$VERSION-py3-none-any.whl /teamo/
 
-RUN python3 -m pip install --no-index --find-links=/teamo teamo
+RUN python3 -m pip install /teamo/teamo-$VERSION-py3-none-any.whl
 
 VOLUME /teamo/db
 

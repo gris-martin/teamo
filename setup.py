@@ -6,6 +6,9 @@ with open('README.md') as f:
 with open('LICENSE') as f:
     license = f.read()
 
+with open('VERSION') as f:
+    version = f.read()
+
 setup(
     name="teamo",
     packages=find_packages(),
@@ -15,7 +18,7 @@ setup(
     author_email='gris_martin@hotmail.com',
     description='A Discord bot for creating teams',
     long_description=readme,
-    version='0.1.0',
+    version=version,
     install_requires=[
         'aiosqlite',
         'dateparser',
