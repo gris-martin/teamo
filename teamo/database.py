@@ -95,8 +95,8 @@ class Database:
         async with aiosqlite.connect(self.db_name) as db:
             await self.insert_member_raw(db, entry_id, member)
 
-    async def edit_or_add_member(self, entry_id: int, member: models.Member) -> int:
-        '''Adds the Member member to the members table if it doesn't exist, or
+    async def edit_or_insert_member(self, entry_id: int, member: models.Member) -> int:
+        '''Adds the Member member to the members table if it doesn't exist,
         or updates its number of players if it does.
 
         Returns an integer with the number of players the previous member had.

@@ -155,7 +155,7 @@ class Teamo(commands.Cog):
             num_players = utils.number_emojis.index(emoji.name) + 1
             member = models.Member(
                 payload.member.id, num_players)
-            previous_num_players = await self.db.edit_or_add_member(message_id, member)
+            previous_num_players = await self.db.edit_or_insert_member(message_id, member)
 
             # Do not have to remove any reactions if the user wasn't registered before
             # or if the previous entry was the same as the current one (somehow)
