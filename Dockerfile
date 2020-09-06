@@ -1,8 +1,5 @@
 FROM python:3.8.5-alpine
 
-# See https://stackoverflow.com/a/61608842
-RUN apk add build-base
-
 RUN mkdir -p /teamo/db
 WORKDIR /teamo
 
