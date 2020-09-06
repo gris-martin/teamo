@@ -4,6 +4,7 @@ RUN mkdir -p /teamo/db
 WORKDIR /teamo
 
 COPY teamo /teamo/teamo
+COPY lists /teamo/lists
 COPY setup.py README.md LICENSE /teamo/
 
 RUN python3 -m pip install /teamo
