@@ -50,6 +50,9 @@ jobs:
       run: |
         docker stop teamo-${{ steps.extract_stuff.outputs.branch }}-instance || true
         docker rm teamo-${{ steps.extract_stuff.outputs.branch }}-instance || true
+        echo $PWD
+        ll -h
+        ll -h teamo/main
         docker load -i teamo/${{ steps.extract_stuff.outputs.branch }}/teamo-docker.tar
     - name: Launch the Docker container
       if: steps.extract_stuff.outputs.branch == 'main'
