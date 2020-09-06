@@ -24,4 +24,5 @@ jobs:
         with:
           name: Test results
           path: junit/test-results.xml
+          if-no-files-found: error
         if: ${{ always() }}
