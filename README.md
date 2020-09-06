@@ -1,3 +1,5 @@
+![Teamo tests](https://github.com/hassanbot/TeamoPy/workflows/Teamo%20tests/badge.svg?branch=main)
+
 # TeamoPy
 A Discord bot for creating teams and finding people to play with :)
 
