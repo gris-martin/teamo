@@ -69,6 +69,8 @@ def create_teams(entry: Entry) -> List[Team]:
     for team in teams:
         members.remove(team.members[0])
 
+    members.sort(key=lambda e: -e.num_players)
+
     # Bin packing problem
     # 1. Try to place all remaining members in one of the teams already created
     #      1.1 Add the highest member to the team with lowest number of members
