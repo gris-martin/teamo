@@ -21,6 +21,9 @@ setup(
         'dateparser',
         'discord.py~=1.4'
     ],
+    data_files=[
+        ('lists', ['lists/adjectives.list', 'lists/nouns.list'])
+    ],
     entry_points={
         'console_scripts': [
             'teamo = teamo.__main__:main'
