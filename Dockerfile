@@ -4,9 +4,9 @@ RUN mkdir -p /teamo/db
 WORKDIR /teamo
 
 ARG VERSION
-COPY dist/teamo-$VERSION-py3-none-any.whl /teamo/
+COPY dist/teamo-${VERSION}-py3-none-any.whl /teamo/
 
-RUN python3 -m pip install /teamo/teamo-$VERSION-py3-none-any.whl
+RUN python3 -m pip install /teamo/teamo-${VERSION}-py3-none-any.whl
 
 VOLUME /teamo/db
 
