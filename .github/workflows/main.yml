@@ -12,9 +12,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - run: echo ${{ github.refs }}
+      - run: echo ${{ toJSON(github) }}
       - uses: ./.github/actions/deploy-action
-        if: github.refs == 'refs/main'
+        if: github.ref == 'refs/main'
         with:
           bot-token: ${{ secrets.TEAMO_BOT_TOKEN_MAIN }}
           host: ${{ secrets.DEPLOY_HOST }}
@@ -24,7 +24,7 @@ jobs:
           passphrase: ${{ secrets.DEPLOY_PASSPHRASE }}
           branch: main
       - uses: ./.github/actions/deploy-action
-        if: github.refs == 'refs/deploy'
+        if: github.ref == 'refs/deploy'
         with:
           bot-token: ${{ secrets.TEAMO_BOT_TOKEN_DEPLOY }}
           host: ${{ secrets.DEPLOY_HOST }}
