@@ -54,13 +54,13 @@ jobs:
         passphrase: '${{ secrets.DEPLOY_PASSPHRASE }}'
         key: '${{ secrets.DEPLOY_KEY }}'
         port: '${{ secrets.DEPLOY_PORT }}'
-      script: |
-        docker stop teamo-${{ steps.extract_stuff.outputs.branch }}-instance || true
-        docker rm teamo-${{ steps.extract_stuff.outputs.branch }}-instance || true
-        echo $PWD
-        ll -h
-        ll -h teamo/main
-        docker load -i teamo/${{ steps.extract_stuff.outputs.branch }}/teamo-docker.tar
+        script: |
+          docker stop teamo-${{ steps.extract_stuff.outputs.branch }}-instance || true
+          docker rm teamo-${{ steps.extract_stuff.outputs.branch }}-instance || true
+          echo $PWD
+          ll -h
+          ll -h teamo/main
+          docker load -i teamo/${{ steps.extract_stuff.outputs.branch }}/teamo-docker.tar
     - name: Launch the Docker container
       if: steps.extract_stuff.outputs.branch == 'main'
       uses: appleboy/ssh-action@master
@@ -70,7 +70,7 @@ jobs:
         passphrase: '${{ secrets.DEPLOY_PASSPHRASE }}'
         key: '${{ secrets.DEPLOY_KEY }}'
         port: '${{ secrets.DEPLOY_PORT }}'
-      script: docker run -e TEAMO_BOT_TOKEN=${{ secrets.TEAMO_BOT_TOKEN_MAIN }} -d -v $PWD/teamo/${{ steps.extract_stuff.outputs.branch }}/db/teamo.db:/teamo/db/teamo.db --name teamo-${{ steps.extract_stuff.outputs.branch }}-instance teamo:${{ steps.extract_stuff.outputs.branch }}
+        script: docker run -e TEAMO_BOT_TOKEN=${{ secrets.TEAMO_BOT_TOKEN_MAIN }} -d -v $PWD/teamo/${{ steps.extract_stuff.outputs.branch }}/db/teamo.db:/teamo/db/teamo.db --name teamo-${{ steps.extract_stuff.outputs.branch }}-instance teamo:${{ steps.extract_stuff.outputs.branch }}
     - name: Launch the Docker container
       if: steps.extract_stuff.outputs.branch == 'deploy'
       uses: appleboy/ssh-action@master
@@ -80,7 +80,7 @@ jobs:
         passphrase: '${{ secrets.DEPLOY_PASSPHRASE }}'
         key: '${{ secrets.DEPLOY_KEY }}'
         port: '${{ secrets.DEPLOY_PORT }}'
-      script: docker run -e TEAMO_BOT_TOKEN=${{ secrets.TEAMO_BOT_TOKEN_DEPLOY }} -d -v $PWD/teamo/${{ steps.extract_stuff.outputs.branch }}/db/teamo.db:/teamo/db/teamo.db --name teamo-${{ steps.extract_stuff.outputs.branch }}-instance teamo:${{ steps.extract_stuff.outputs.branch }}
+        script: docker run -e TEAMO_BOT_TOKEN=${{ secrets.TEAMO_BOT_TOKEN_DEPLOY }} -d -v $PWD/teamo/${{ steps.extract_stuff.outputs.branch }}/db/teamo.db:/teamo/db/teamo.db --name teamo-${{ steps.extract_stuff.outputs.branch }}-instance teamo:${{ steps.extract_stuff.outputs.branch }}
     - name: Make sure the Docker container is running
       uses: appleboy/ssh-action@master
       with:
@@ -89,9 +89,9 @@ jobs:
         passphrase: '${{ secrets.DEPLOY_PASSPHRASE }}'
         key: '${{ secrets.DEPLOY_KEY }}'
         port: '${{ secrets.DEPLOY_PORT }}'
-      script: |
-        sleep 10
-        if [ "$( docker container inspect -f '{{.State.Status}}' teamo-${{ steps.extract_stuff.outputs.branch }}-instance )" == "running" ]; then exit 0; else echo "Docker container is not running. Did it crash during startup?" && exit 1; fi
+        script: |
+          sleep 10
+          if [ "$( docker container inspect -f '{{.State.Status}}' teamo-${{ steps.extract_stuff.outputs.branch }}-instance )" == "running" ]; then exit 0; else echo "Docker container is not running. Did it crash during startup?" && exit 1; fi
 
 # jobs:
 #   deploy:
