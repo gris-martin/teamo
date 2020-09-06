@@ -12,6 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - run: echo ${{ toJson(github) }}
       - uses: ./.github/actions/deploy-action
         if: github.refs == 'refs/main'
         with:
