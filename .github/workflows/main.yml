@@ -48,4 +48,4 @@ jobs:
             touch teamo/main/db/teamo.db
             docker run -e TEAMO_BOT_TOKEN=${{ secrets.TEAMO_BOT_TOKEN_MAIN }} -d -v $PWD/teamo/main/db/teamo.db:/teamo/db/teamo.db --name teamo-main-instance teamo-main
             sleep 10
-            [ "$( docker container inspect -f '{{.State.Status}}' teamo-main-instance )" == "running" ]
+            if [ "$( docker container inspect -f '{{.State.Status}}' teamo-main-instance )" == "running" ]; then exit 0; else echo "Docker container is not running. Did it crash during startup?" && exit 1; fi
