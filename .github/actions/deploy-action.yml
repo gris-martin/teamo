@@ -1,0 +1,66 @@
+name: Deploy Teamo
+description: Deploy Teamo to an external server
+inputs:
+  bot-token:
+    required: true
+    description: Bot token generated on the Discord Developer Portal.
+  host:
+    required: true
+    description: Host address to server.
+  port:
+    required: true
+    description: The server port to connect to.
+  username:
+    required: true
+    description: Username on server.
+  key:
+    required: true
+    description: SSH private key to use when connecting to the server.
+  passphrase:
+    required: true
+    description: Passphrase to the SSH key.
+  branch:
+    required: true
+    description: The name of the branch to be deployed. This affects naming of folders and Docker containers.
+
+runs:
+  using: composite
+  steps:
+    - name: Clean up Teamo previous deploy
+      uses: appleboy/ssh-action@master
+      with:
+        host: '${{ inputs.host }}'
+        username: '${{ inputs.username }}'
+        passphrase: '${{ inputs.passphrase }}'
+        key: '${{ inputs.key }}'
+        port: '${{ inputs.port }}'
+        script: |
+          set -e
+          rm -r -f teamo/${{ inputs.branch }}/src
+          docker stop teamo-${{ inputs.branch }}-instance || true
+          docker rm teamo-${{ inputs.branch }}-instance || true
+    - name: Copy Teamo to server
+      uses: appleboy/scp-action@master
+      with:
+        host: '${{ inputs.host }}'
+        username: '${{ inputs.username }}'
+        passphrase: '${{ inputs.passphrase }}'
+        key: '${{ inputs.key }}'
+        port: '${{ inputs.port }}'
+        source: '*'
+        target: teamo/${{ inputs.branch }}/src
+    - name: Start Docker container
+      uses: appleboy/ssh-action@master
+      with:
+        host: '${{ inputs.host }}'
+        username: '${{ inputs.username }}'
+        passphrase: '${{ inputs.passphrase }}'
+        key: '${{ inputs.key }}'
+        port: '${{ inputs.port }}'
+        script: |
+          set -e
+          docker build -t teamo-${{ inputs.branch }} teamo/${{ inputs.branch }}/src
+          touch teamo/${{ inputs.branch }}/db/teamo.db
+          docker run -e TEAMO_BOT_TOKEN=${{ inputs.bot-token }} -d -v $PWD/teamo/${{ inputs.branch }}/db/teamo.db:/teamo/db/teamo.db --name teamo-${{ inputs.branch }}-instance teamo-${{ inputs.branch }}
+          sleep 10
+          if [ "$( docker container inspect -f '{{.State.Status}}' teamo-${{ inputs.branch }}-instance )" == "running" ]; then exit 0; else echo "Docker container is not running. Did it crash during startup?" && exit 1; fi
