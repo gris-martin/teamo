@@ -104,7 +104,7 @@ def create_teams(entry: Entry) -> List[Team]:
     return teams
 
 
-def create_finish_embed(entry: Entry):
+def create_finish_embed(entry: Entry) -> discord.Embed:
     embed = discord.Embed(
         title=f"**{entry.game} @ {get_date_string(entry.start_date, False)}**"
     )
