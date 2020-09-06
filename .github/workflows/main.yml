@@ -44,5 +44,5 @@ jobs:
         script: |
           set -e
           docker build -t teamo-main teamo/main/src
-          python3 teamo/main/src/utils/create_database.py teamo/main/db/teamo.db
+          touch teamo/main/db/teamo.db
           docker run -e TEAMO_BOT_TOKEN=${{ secrets.TEAMO_BOT_TOKEN_MAIN }} -d -v $PWD/teamo/main/db/teamo.db:/teamo/db/teamo.db --name teamo-main-instance teamo-main
