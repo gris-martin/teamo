@@ -15,7 +15,7 @@ import discord
 from discord.ext import commands
 
 # Internal imports
-from teamo import models, utils, config, database, teams
+from teamo import models, utils, config, database, teamcreation
 from teamo.utils import send_and_print
 
 
@@ -88,7 +88,7 @@ class Teamo(commands.Cog):
                 if entry.start_date > datetime.now():
                     continue
                 channel = await self.bot.fetch_channel(entry.channel_id)
-                await channel.send(embed=teams.create_finish_embed(entry))
+                await channel.send(embed=teamcreation.create_finish_embed(entry))
                 await self.delete_entry(entry.message_id)
             await asyncio.sleep(config.finish_check_interval)
 

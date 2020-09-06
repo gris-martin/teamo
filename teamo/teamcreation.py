@@ -62,6 +62,8 @@ def create_teams(entry: Entry) -> List[Team]:
 
     teams = list()
     for member in members:
+        if member.num_players >= entry.max_players:
+            raise ValueError(f"Cannot create teams since player f{member.user_id} has too many members (f{member.num_players})")
         if member.num_players <= floor(entry.max_players / 2):
             continue
         teams.append(Team(member))
