@@ -50,10 +50,10 @@ jobs:
         docker rm teamo-${{ steps.extract_branch.outputs.branch }}-instance || true
         docker load -i teamo/${{ steps.extract_branch.outputs.branch }}/teamo-docker.tar
     - name: Launch the Docker container
-      if: steps.extract_branch.outputs.branch == main
+      if: steps.extract_branch.outputs.branch == 'main'
       run: docker run -e TEAMO_BOT_TOKEN=${{ secrets.TEAMO_BOT_TOKEN_MAIN }} -d -v $PWD/teamo/${{ steps.extract_branch.outputs.branch }}/db/teamo.db:/teamo/db/teamo.db --name teamo-${{ steps.extract_branch.outputs.branch }}-instance teamo:${{ steps.extract_branch.outputs.branch }}
     - name: Launch the Docker container
-      if: steps.extract_branch.outputs.branch == deploy
+      if: steps.extract_branch.outputs.branch == 'deploy'
       run: docker run -e TEAMO_BOT_TOKEN=${{ secrets.TEAMO_BOT_TOKEN_DEPLOY }} -d -v $PWD/teamo/${{ steps.extract_branch.outputs.branch }}/db/teamo.db:/teamo/db/teamo.db --name teamo-${{ steps.extract_branch.outputs.branch }}-instance teamo:${{ steps.extract_branch.outputs.branch }}
     - name: Make sure the Docker container is running
       run: |
