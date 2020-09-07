@@ -32,6 +32,27 @@ class Database:
                 foreign key (entry_id) references entries (entry_id)
                 )''')
 
+    ############## Entry methods ##############
+    async def get_entry(self, message_id: int) -> models.Entry:
+        async with aiosqlite.connect(self.db_name, detect_types=PARSE_DECLTYPES) as db:
+            entry_cursor = await db.execute(
+                "SELECT * FROM entries WHERE entry_id=?", (message_id,)
+            )
+            entry_row = await entry_cursor.fetchone()
+            if entry_row is None:
+                return None
+            entry = models.Entry(*entry_row)
+
+            row_cursor = await db.execute(
+                "SELECT * FROM members WHERE entry_id=?", (message_id,)
+            )
+            member_rows = await row_cursor.fetchall()
+            for row in member_rows:
+                member = models.Member(*row[1:])
+                entry.members.append(member)
+
+            return entry
+
     async def insert_entry(self, entry: models.Entry):
         async with aiosqlite.connect(self.db_name) as db:
             await db.execute(
@@ -80,6 +101,7 @@ class Database:
             )
             await db.commit()
 
+    ############## Member methods ##############
     async def insert_member_raw(self, db, entry_id: int, member: models.Member):
         await db.execute(
             "INSERT INTO members VALUES (?, ?, ?)",
@@ -136,26 +158,7 @@ class Database:
             await db.commit()
             return member_row[2]
 
-    async def get_entry(self, message_id: int) -> models.Entry:
-        async with aiosqlite.connect(self.db_name, detect_types=PARSE_DECLTYPES) as db:
-            entry_cursor = await db.execute(
-                "SELECT * FROM entries WHERE entry_id=?", (message_id,)
-            )
-            entry_row = await entry_cursor.fetchone()
-            if entry_row is None:
-                return None
-            entry = models.Entry(*entry_row)
-
-            row_cursor = await db.execute(
-                "SELECT * FROM members WHERE entry_id=?", (message_id,)
-            )
-            member_rows = await row_cursor.fetchall()
-            for row in member_rows:
-                member = models.Member(*row[1:])
-                entry.members.append(member)
-
-            return entry
-
+    async def delete_entry(self, )
 
 async def main():
     # db = Database(':memory:')
