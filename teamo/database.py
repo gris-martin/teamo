@@ -44,11 +44,11 @@ class Database:
             entry = models.Entry(*entry_row)
 
             row_cursor = await db.execute(
-                "SELECT * FROM members WHERE entry_id=?", (message_id,)
+                "SELECT member_id, num_players FROM members WHERE entry_id=?", (message_id,)
             )
             member_rows = await row_cursor.fetchall()
             for row in member_rows:
-                member = models.Member(*row[1:])
+                member = models.Member(*row)
                 entry.members.append(member)
 
             return entry
