@@ -65,10 +65,7 @@ class Teamo(commands.Cog):
             message = self.cached_messages[message_id]
             await message.edit(embed=utils.create_embed(entry, is_cancelling))
         except discord.NotFound:
-            await send_and_print(
-                message.channel,
-                f"WARNING: Attempted to update a message (ID: {entry.message_id}) that has already been deleted. Deleting message from database."
-            )
+            print(f"WARNING: Attempted to update a message (ID: {entry.message_id}) that has already been deleted. Deleting message from database.")
             await self.db.delete_entry(entry.message_id)
 
     async def update_timer(self):
@@ -204,6 +201,17 @@ class Teamo(commands.Cog):
             cancel_task.cancel()
             self.cancel_tasks[message_id] = None
             await self.update_message(db_entry)
+
+        # If number emoji: Remove member, update message
+        async with self.locks[message_id]:
+            user_id = payload.user_id
+            db_member = await self.db.get_member(message_id, user_id)
+            num_players = utils.number_emojis.index(str(emoji)) + 1
+            if db_member.num_players != num_players:
+                return
+            await self.db.delete_member(message_id, user_id)
+            await self.update_message(message_id)
+            await self.sync_message(message_id)
 
     @commands.command()
     async def create(self, ctx: discord.ext.commands.Context, *, arg: str):
