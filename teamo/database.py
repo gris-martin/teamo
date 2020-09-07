@@ -59,6 +59,12 @@ class Database:
                 "INSERT INTO entries VALUES (?, ?, ?, ?, ?, ?)",
                 astuple(entry)[:-1]
             )
+
+            member_tuple_list = list(map(lambda m: (entry.message_id, m.user_id, m.num_players), entry.members))
+            await db.executemany(
+                "INSERT INTO members VALUES (?, ?, ?)", member_tuple_list
+            )
+
             await db.commit()
 
     async def get_all_entries(self) -> List[models.Entry]:
@@ -102,6 +108,17 @@ class Database:
             await db.commit()
 
     ############## Member methods ##############
+    async def get_member(self, entry_id: int, member_id: int) -> models.Member:
+        async with aiosqlite.connect(self.db_name, detect_types=PARSE_DECLTYPES) as db:
+            cursor = await db.execute(
+                "SELECT member_id, num_players FROM members WHERE entry_id=? AND member_id=?",
+                (entry_id, member_id)
+            )
+            row = await cursor.fetchone()
+            if row is None:
+                return None
+            return models.Member(*row)
+
     async def insert_member_raw(self, db, entry_id: int, member: models.Member):
         await db.execute(
             "INSERT INTO members VALUES (?, ?, ?)",
@@ -158,10 +175,15 @@ class Database:
             await db.commit()
             return member_row[2]
 
-    async def delete_entry(self, )
+    async def delete_member(self, entry_id: int, member_id: int):
+        async with aiosqlite.connect(self.db_name) as db:
+            await db.execute(
+                "DELETE FROM members WHERE entry_id=? AND member_id=?",
+                (entry_id, member_id)
+            )
+            await db.commit()
 
 async def main():
-    # db = Database(':memory:')
     db = Database(f'{uuid.uuid4()}.db')
     print(f"Created db: {db.db_name}")
     await db.init()
