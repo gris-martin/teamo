@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 from typing import List
 from math import floor
+import logging
 
 import discord
 
@@ -96,5 +97,5 @@ cancel_emoji = "❌"
 
 
 async def send_and_print(channel: discord.TextChannel, message):
-    print(message)
+    logging.info(message)
     await channel.send(message)

@@ -9,6 +9,7 @@ from pathlib import Path
 import os
 import sys
 import argparse
+import logging
 
 # Third party imports
 import discord
@@ -65,7 +66,7 @@ class Teamo(commands.Cog):
             message = self.cached_messages[message_id]
             await message.edit(embed=utils.create_embed(entry, is_cancelling))
         except discord.NotFound:
-            print(f"WARNING: Attempted to update a message (ID: {entry.message_id}) that has already been deleted. Deleting message from database.")
+            logging.warning(f"Attempted to update a message (ID: {entry.message_id}) that has already been deleted. Deleting message from database.")
             await self.db.delete_entry(entry.message_id)
 
     async def update_timer(self):
@@ -110,7 +111,7 @@ class Teamo(commands.Cog):
                 self.cached_messages[message_id] = await channel.fetch_message(message_id)
                 self.locks[message_id] = asyncio.Lock()
             except discord.NotFound:
-                print(
+                logging.warning(
                     f"Discord message for database entry with message id {entry.message_id} does not exist. Removing entry from database.")
                 deleted_ids.append(entry.message_id)
 
@@ -120,7 +121,7 @@ class Teamo(commands.Cog):
             asyncio.create_task(self.update_timer())
         asyncio.create_task(self.finish_timer())
         self.startup_done.set()
-        print("Teamo is ready!")
+        logging.info("Teamo is ready!")
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
@@ -287,6 +288,8 @@ class Teamo(commands.Cog):
 
 
 def main():
+    logging.basicConfig(level=logging.INFO)
+
     parser = argparse.ArgumentParser(description='Start the Teamo bot.')
     parser.add_argument(
         "--database",
@@ -302,11 +305,11 @@ def main():
 
     @bot.event
     async def on_ready():
-        print(f"Connected as {bot}")
+        logging.info(f"Connected as {bot}")
 
     token = os.environ["TEAMO_BOT_TOKEN"]
     if (token is None):
-        print("Missing bot token. Set the TEAMO_BOT_TOKEN environment variable to the bot token found on the Discord Developer Portal.")
+        logging.error("Missing bot token. Set the TEAMO_BOT_TOKEN environment variable to the bot token found on the Discord Developer Portal.")
         sys.exit(1)
 
     bot.run(token)
