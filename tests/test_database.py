@@ -166,3 +166,36 @@ async def test_delete_entry(db):
     db_entries = await db.get_all_entries()
     assert len(db_entries) == 1
     assert db_entries[0] == dataclasses.replace(entry, message_id=3)
+
+
+@pytest.mark.asyncio
+async def test_settings(db: Database):
+    settings0 = models.Settings(
+        use_channel_id=0,
+        waiting_channel_id=0,
+        end_channel_id=0,
+        delete_after=0
+    )
+    settings1 = models.Settings(
+        use_channel_id=1,
+        waiting_channel_id=2,
+        end_channel_id=3,
+        delete_after=4
+    )
+    await db.insert_settings(0, settings0)
+    await db.insert_settings(1, settings1)
+
+    db_settings0 = await db.get_settings(0)
+    assert settings0 == db_settings0
+    db_settings1 = await db.get_settings(1)
+    assert settings1 == db_settings1
+
+    await db.edit_setting(0, models.SettingsType.USE, 6)
+    await db.edit_setting(0, models.SettingsType.WAITING, 1)
+    await db.edit_setting(0, models.SettingsType.END, 3)
+    await db.edit_setting(0, models.SettingsType.DELETE, 2)
+    db_settings_edited = await db.get_settings(0)
+    assert db_settings_edited.use_channel_id == 6
+    assert db_settings_edited.waiting_channel_id == 1
+    assert db_settings_edited.end_channel_id == 3
+    assert db_settings_edited.delete_after == 2
