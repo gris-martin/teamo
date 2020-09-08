@@ -286,6 +286,11 @@ class Teamo(commands.Cog):
         if config.user_message_delete_delay >= 0:
             await ctx.message.delete(delay=config.user_message_delete_delay)
 
+    @commands.command
+    async def serversetting(self, ctx: discord.ext.commands.Context, key: str, value: int):
+        setting = models.SettingsType.from_string(key)
+        await self.db.edit_setting(ctx.guild.id, setting)
+
 
 def main():
     logging.basicConfig(level=logging.INFO)
