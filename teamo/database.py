@@ -37,7 +37,9 @@ class Database:
                 use_channel_id integer,
                 waiting_channel_id integer,
                 end_channel_id integer,
-                delete_after integer
+                delete_use_delay integer,
+                delete_end_delay integer,
+                cancel_delay integer
                 )''')
 
     ############## Entry methods ##############
@@ -196,20 +198,24 @@ class Database:
         async with aiosqlite.connect(self.db_name) as db:
             db_tuple = (guild_id,) + astuple(settings)
             await db.execute(
-                "INSERT INTO settings VALUES (?, ?, ?, ?, ?)",
+                "INSERT INTO settings VALUES (?, ?, ?, ?, ?, ?, ?)",
                 db_tuple
             )
             await db.commit()
 
     async def edit_setting(self, guild_id: int, settings_type: models.SettingsType, setting: int):
-        if (settings_type == models.SettingsType.USE):
+        if (settings_type == models.SettingsType.USE_CHANNEL):
             db_key = "use_channel_id"
-        elif (settings_type == models.SettingsType.WAITING):
+        elif (settings_type == models.SettingsType.WAITING_CHANNEL):
             db_key = "waiting_channel_id"
-        elif (settings_type == models.SettingsType.END):
+        elif (settings_type == models.SettingsType.END_CHANNEL):
             db_key = "end_channel_id"
-        elif (settings_type == models.SettingsType.DELETE):
-            db_key = "delete_after"
+        elif (settings_type == models.SettingsType.DELETE_USE_DELAY):
+            db_key = "delete_use_delay"
+        elif (settings_type == models.SettingsType.DELETE_END_DELAY):
+            db_key = "delete_end_delay"
+        elif (settings_type == models.SettingsType.CANCEL_DELAY):
+            db_key = "cancel_delay"
         else:
             raise Exception(f"Cannot edit guild setting for guild {guild_id}, unknown setting: {settings_type}.")
 
@@ -236,7 +242,9 @@ class Database:
                         use_channel_id,
                         waiting_channel_id,
                         end_channel_id,
-                        delete_after
+                        delete_use_delay,
+                        delete_end_delay,
+                        cancel_delay
                     FROM settings
                     WHERE guild_id=?
                 ''',

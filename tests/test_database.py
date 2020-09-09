@@ -174,13 +174,13 @@ async def test_settings(db: Database):
         use_channel_id=0,
         waiting_channel_id=0,
         end_channel_id=0,
-        delete_after=0
+        delete_end_delay=0
     )
     settings1 = models.Settings(
         use_channel_id=1,
         waiting_channel_id=2,
         end_channel_id=3,
-        delete_after=4
+        delete_end_delay=4
     )
     await db.insert_settings(0, settings0)
     await db.insert_settings(1, settings1)
@@ -190,12 +190,16 @@ async def test_settings(db: Database):
     db_settings1 = await db.get_settings(1)
     assert settings1 == db_settings1
 
-    await db.edit_setting(0, models.SettingsType.USE, 6)
-    await db.edit_setting(0, models.SettingsType.WAITING, 1)
-    await db.edit_setting(0, models.SettingsType.END, 3)
-    await db.edit_setting(0, models.SettingsType.DELETE, 2)
+    await db.edit_setting(0, models.SettingsType.USE_CHANNEL, 6)
+    await db.edit_setting(0, models.SettingsType.WAITING_CHANNEL, 1)
+    await db.edit_setting(0, models.SettingsType.END_CHANNEL, 3)
+    await db.edit_setting(0, models.SettingsType.DELETE_USE_DELAY, 2)
+    await db.edit_setting(0, models.SettingsType.DELETE_END_DELAY, 7)
+    await db.edit_setting(0, models.SettingsType.CANCEL_DELAY, 12)
     db_settings_edited = await db.get_settings(0)
     assert db_settings_edited.use_channel_id == 6
     assert db_settings_edited.waiting_channel_id == 1
     assert db_settings_edited.end_channel_id == 3
-    assert db_settings_edited.delete_after == 2
+    assert db_settings_edited.delete_use_delay == 2
+    assert db_settings_edited.delete_end_delay == 7
+    assert db_settings_edited.cancel_delay == 12
