@@ -1,7 +1,6 @@
 import asyncio
 from datetime import datetime
-from dataclasses import dataclass, astuple
-from teamo.models import SettingsType
+from dataclasses import astuple
 import uuid
 from typing import List
 from sqlite3 import PARSE_DECLTYPES

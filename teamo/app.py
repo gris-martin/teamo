@@ -1,8 +1,7 @@
 import re
 from dateparser.search import search_dates
 from datetime import datetime, timedelta
-from typing import List, Dict
-import time
+from typing import Dict
 import asyncio
 import traceback
 from pathlib import Path
@@ -13,7 +12,6 @@ import logging
 
 # Third party imports
 import discord
-from discord.abc import User
 from discord.ext import commands
 
 # Internal imports
