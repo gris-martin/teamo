@@ -1,6 +1,6 @@
 import asyncio
 from datetime import datetime
-from dataclasses import dataclass, astuple
+from dataclasses import astuple
 import uuid
 from typing import List
 from sqlite3 import PARSE_DECLTYPES
@@ -30,6 +30,17 @@ class Database:
                 num_players integer,
                 primary key (member_id, entry_id)
                 foreign key (entry_id) references entries (entry_id)
+                )''')
+
+            await db.execute('''CREATE TABLE IF NOT EXISTS settings (
+                guild_id integer primary key,
+                use_channel integer,
+                waiting_channel integer,
+                end_channel integer,
+                delete_general_delay integer,
+                delete_use_delay integer,
+                delete_end_delay integer,
+                cancel_delay integer
                 )''')
 
     ############## Entry methods ##############
@@ -182,6 +193,68 @@ class Database:
                 (entry_id, member_id)
             )
             await db.commit()
+
+    ############## Settings methods ##############
+    async def insert_settings(self, guild_id: int, settings: models.Settings):
+        async with aiosqlite.connect(self.db_name) as db:
+            db_tuple = (guild_id,) + astuple(settings)
+            await db.execute(
+                "INSERT INTO settings VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                db_tuple
+            )
+            await db.commit()
+
+    async def edit_setting(self, guild_id: int, settings_type: models.SettingsType, setting: int):
+        db_key = settings_type.to_string()
+        async with aiosqlite.connect(self.db_name) as db:
+            await db.execute(
+                f'''
+                    UPDATE settings
+                    SET
+                        {db_key} = ?
+                    WHERE guild_id=?
+                ''',
+                (
+                    setting,
+                    guild_id
+                )
+            )
+            await db.commit()
+
+    async def get_setting(self, guild_id: int, setting: models.SettingsType) -> int:
+        db_key = setting.to_string()
+        async with aiosqlite.connect(self.db_name) as db:
+            cursor = await db.execute(
+                f'SELECT {db_key} FROM settings WHERE guild_id=?',
+                (guild_id,)
+            )
+            row = await cursor.fetchone()
+            if row is None:
+                raise Exception(f"Could not get setting {setting} from guild with id {guild_id}.")
+            return row[0]
+
+    async def get_settings(self, guild_id: int) -> models.Settings:
+        async with aiosqlite.connect(self.db_name) as db:
+            cursor = await db.execute(
+                '''
+                    SELECT
+                        use_channel,
+                        waiting_channel,
+                        end_channel,
+                        delete_general_delay,
+                        delete_use_delay,
+                        delete_end_delay,
+                        cancel_delay
+                    FROM settings
+                    WHERE guild_id=?
+                ''',
+                (guild_id,)
+            )
+            row = await cursor.fetchone()
+            if row is None:
+                return None
+            return models.Settings(*row)
+
 
 async def main():
     db = Database(f'{uuid.uuid4()}.db')
