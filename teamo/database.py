@@ -1,6 +1,7 @@
 import asyncio
 from datetime import datetime
 from dataclasses import dataclass, astuple
+from teamo.models import SettingsType
 import uuid
 from typing import List
 from sqlite3 import PARSE_DECLTYPES
@@ -34,9 +35,10 @@ class Database:
 
             await db.execute('''CREATE TABLE IF NOT EXISTS settings (
                 guild_id integer primary key,
-                use_channel_id integer,
-                waiting_channel_id integer,
-                end_channel_id integer,
+                use_channel integer,
+                waiting_channel integer,
+                end_channel integer,
+                delete_general_delay integer,
                 delete_use_delay integer,
                 delete_end_delay integer,
                 cancel_delay integer
@@ -198,27 +200,13 @@ class Database:
         async with aiosqlite.connect(self.db_name) as db:
             db_tuple = (guild_id,) + astuple(settings)
             await db.execute(
-                "INSERT INTO settings VALUES (?, ?, ?, ?, ?, ?, ?)",
+                "INSERT INTO settings VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
                 db_tuple
             )
             await db.commit()
 
     async def edit_setting(self, guild_id: int, settings_type: models.SettingsType, setting: int):
-        if (settings_type == models.SettingsType.USE_CHANNEL):
-            db_key = "use_channel_id"
-        elif (settings_type == models.SettingsType.WAITING_CHANNEL):
-            db_key = "waiting_channel_id"
-        elif (settings_type == models.SettingsType.END_CHANNEL):
-            db_key = "end_channel_id"
-        elif (settings_type == models.SettingsType.DELETE_USE_DELAY):
-            db_key = "delete_use_delay"
-        elif (settings_type == models.SettingsType.DELETE_END_DELAY):
-            db_key = "delete_end_delay"
-        elif (settings_type == models.SettingsType.CANCEL_DELAY):
-            db_key = "cancel_delay"
-        else:
-            raise Exception(f"Cannot edit guild setting for guild {guild_id}, unknown setting: {settings_type}.")
-
+        db_key = settings_type.to_string()
         async with aiosqlite.connect(self.db_name) as db:
             await db.execute(
                 f'''
@@ -234,14 +222,27 @@ class Database:
             )
             await db.commit()
 
+    async def get_setting(self, guild_id: int, setting: models.SettingsType) -> int:
+        db_key = setting.to_string()
+        async with aiosqlite.connect(self.db_name) as db:
+            cursor = await db.execute(
+                f'SELECT {db_key} FROM settings WHERE guild_id=?',
+                (guild_id,)
+            )
+            row = await cursor.fetchone()
+            if row is None:
+                raise Exception(f"Could not get setting {setting} from guild with id {guild_id}.")
+            return row[0]
+
     async def get_settings(self, guild_id: int) -> models.Settings:
         async with aiosqlite.connect(self.db_name) as db:
             cursor = await db.execute(
                 '''
                     SELECT
-                        use_channel_id,
-                        waiting_channel_id,
-                        end_channel_id,
+                        use_channel,
+                        waiting_channel,
+                        end_channel,
+                        delete_general_delay,
                         delete_use_delay,
                         delete_end_delay,
                         cancel_delay

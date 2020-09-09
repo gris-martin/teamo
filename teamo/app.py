@@ -13,11 +13,11 @@ import logging
 
 # Third party imports
 import discord
+from discord.abc import User
 from discord.ext import commands
 
 # Internal imports
 from teamo import models, utils, config, database, teamcreation
-from teamo.utils import send_and_print
 
 
 class Teamo(commands.Cog):
@@ -94,6 +94,13 @@ class Teamo(commands.Cog):
         old_message = self.cached_messages[message_id]
         channel = old_message.channel
         self.cached_messages[message_id] = await channel.fetch_message(message_id)
+
+    async def send_and_log(self, channel: discord.TextChannel, message: str):
+        logging.info(f"Sent message to Discord: {message}")
+        delete_after = await self.db.get_setting(channel.guild.id, models.SettingsType.DELETE_GENERAL_DELAY)
+        if delete_after < 0:
+            delete_after = 0
+        await channel.send(message, delete_after=delete_after)
 
     @commands.Cog.listener
     async def on_connect(self):
@@ -215,7 +222,7 @@ class Teamo(commands.Cog):
             await self.sync_message(message_id)
 
     @commands.command
-    async def create(self, ctx: discord.ext.commands.Context, *, arg: str):
+    async def create(self, ctx: commands.Context, *, arg: str):
         await self.startup_done.wait()
         # Parse arguments
 
@@ -223,23 +230,23 @@ class Teamo(commands.Cog):
         args = re.match(r"^(\d+) (\d{1,2}:\d{2}) (.+)", arg)
         if (args is None):
             # TODO: Better error message
-            await send_and_print(ctx.channel, "Invalid arguments to create command: {}".format(arg))
+            await self.send_and_log(ctx.channel, "Invalid arguments to create command: {}".format(arg))
             return
 
         #   - Number of players
         max_players = int(args.group(1))
         n_guild_members = len(ctx.guild.members)
         if max_players < 2:
-            await send_and_print(ctx.channel, "Number of players must be greater than 2.")
+            await self.send_and_log(ctx.channel, "Number of players must be greater than 2.")
         if max_players > n_guild_members:
-            await send_and_print(ctx.channel, "Number of players cannot be more than the number of members in the server, which is {}.".format(n_guild_members))
+            await self.send_and_log(ctx.channel, "Number of players cannot be more than the number of members in the server, which is {}.".format(n_guild_members))
             return
 
         #   - Date
         date_str = args.group(2)
         date_results = search_dates(date_str)
         if date_results is None or len(date_results) == 0:
-            await send_and_print(ctx.channel, "Invalid date: {}".format(date_str))
+            await self.send_and_log(ctx.channel, "Invalid date: {}".format(date_str))
             return
 
         date = date_results[0][1]
@@ -250,7 +257,7 @@ class Teamo(commands.Cog):
         game = args.group(3)
         max_game_chars = 30
         if len(game) > max_game_chars:
-            await send_and_print(ctx.channel, "Game name too long, maximum length of game name is {} characters. Try again!".format(max_game_chars))
+            await self.send_and_log(ctx.channel, "Game name too long, maximum length of game name is {} characters. Try again!".format(max_game_chars))
             return
 
         # Create message and send to Discord
@@ -287,9 +294,19 @@ class Teamo(commands.Cog):
             await ctx.message.delete(delay=config.user_message_delete_delay)
 
     @commands.command
-    async def serversetting(self, ctx: discord.ext.commands.Context, key: str, value: int):
-        setting = models.SettingsType.from_string(key)
-        await self.db.edit_setting(ctx.guild.id, setting)
+    async def serversetting(self, ctx: commands.Context, key: str, value: int):
+        if ctx.author.bot:
+            return
+        if not ctx.author.guild_permissions.administrator:
+            return
+
+        try:
+            setting = models.SettingsType.from_string(key)
+        except ValueError as e:
+            await self.send_and_log(ctx.channel, f"Tried setting unknown setting: {key}.")
+            return
+        await self.db.edit_setting(ctx.guild.id, setting, value)
+        await self.send_and_log(f"Successfully set setting {key} to {value}!")
 
 
 def main():

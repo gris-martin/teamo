@@ -171,16 +171,18 @@ async def test_delete_entry(db):
 @pytest.mark.asyncio
 async def test_settings(db: Database):
     settings0 = models.Settings(
-        use_channel_id=0,
-        waiting_channel_id=0,
-        end_channel_id=0,
-        delete_end_delay=0
+        use_channel=0,
+        waiting_channel=0,
+        end_channel=0
     )
     settings1 = models.Settings(
-        use_channel_id=1,
-        waiting_channel_id=2,
-        end_channel_id=3,
-        delete_end_delay=4
+        use_channel=1,
+        waiting_channel=2,
+        end_channel=3,
+        delete_general_delay=4,
+        delete_use_delay=5,
+        delete_end_delay=6,
+        cancel_delay=7
     )
     await db.insert_settings(0, settings0)
     await db.insert_settings(1, settings1)
@@ -193,13 +195,15 @@ async def test_settings(db: Database):
     await db.edit_setting(0, models.SettingsType.USE_CHANNEL, 6)
     await db.edit_setting(0, models.SettingsType.WAITING_CHANNEL, 1)
     await db.edit_setting(0, models.SettingsType.END_CHANNEL, 3)
+    await db.edit_setting(0, models.SettingsType.DELETE_GENERAL_DELAY, 155)
     await db.edit_setting(0, models.SettingsType.DELETE_USE_DELAY, 2)
     await db.edit_setting(0, models.SettingsType.DELETE_END_DELAY, 7)
     await db.edit_setting(0, models.SettingsType.CANCEL_DELAY, 12)
     db_settings_edited = await db.get_settings(0)
-    assert db_settings_edited.use_channel_id == 6
-    assert db_settings_edited.waiting_channel_id == 1
-    assert db_settings_edited.end_channel_id == 3
+    assert db_settings_edited.use_channel == 6
+    assert db_settings_edited.waiting_channel == 1
+    assert db_settings_edited.end_channel == 3
+    assert db_settings_edited.delete_general_delay == 155
     assert db_settings_edited.delete_use_delay == 2
     assert db_settings_edited.delete_end_delay == 7
     assert db_settings_edited.cancel_delay == 12

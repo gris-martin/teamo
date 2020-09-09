@@ -94,8 +94,3 @@ number_emojis = [
     "🔟"]
 
 cancel_emoji = "❌"
-
-
-async def send_and_print(channel: discord.TextChannel, message):
-    logging.info(message)
-    await channel.send(message)
