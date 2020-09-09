@@ -56,17 +56,17 @@ class Settings:
     ''' Class for holding per-server settings
 
     Attributes:
-        use_channel_id (int) The channel ID of the channel where Teamo messages will be accepted. None -> Every channel is allowed. Default: Create a new channel named "teamo" and only allow messages there.
-        waiting_channel_id (int) The channel ID of the channel where Teamo should post the "waiting" messages. None -> Same as the channel as the command was posted. Default: Create a new channel named "teamo" and post messages there.
-        end_channel_id (int) The channel ID of the channel where Teamo should post the "end" messages. None -> Same as the channel as the command was posted. Default: Create a new channel named "teamo" and post messages there.
+        use_channel_id (int) The channel ID of the channel where Teamo messages will be accepted. None -> Every channel is allowed. Default: None
+        waiting_channel_id (int) The channel ID of the channel where Teamo should post the "waiting" messages. None -> Same as the channel as the command was posted. Default: None
+        end_channel_id (int) The channel ID of the channel where Teamo should post the "end" messages. None -> Same as the channel as the command was posted. Default: None
         delete_general_delay (int) Number of seconds after Teamo posts a general message (e.g. error message) that it will be deleted. < 0 -> Message will never be deleted. Default: 15
         delete_use_delay (int) Number of seconds after a message directed at Teamo will be deleted. < 0 -> Message will never be deleted. Default: 5
         delete_end_delay (int) Number of seconds after an "end" message has been posted that it will be deleted. < 0 -> Message will never be deleted. Default: 0
         cancel_delay (int) Number of seconds after a cancel reaction has been pressed that the message will be deleted. < 0 -> Message will be deleted immediately. Defualt: 15
     '''
-    use_channel: int
-    waiting_channel: int
-    end_channel: int
+    use_channel: int = None
+    waiting_channel: int = None
+    end_channel: int = None
     delete_general_delay: int = 15
     delete_use_delay: int = 5
     delete_end_delay: int = 0

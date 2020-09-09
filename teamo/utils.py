@@ -40,7 +40,7 @@ def get_timedelta_string(td: timedelta) -> str:
     return f"{days} days {hours} h {mins} min"
 
 
-def create_embed(entry: Entry, is_cancelling: bool = False) -> discord.Embed:
+def create_embed(entry: Entry, cancel_delay: int = 0, is_cancelling: bool = False) -> discord.Embed:
     date_string = get_date_string(entry.start_date)
     embed = discord.Embed(
         title="Time for **{}**!!".format(entry.game),
@@ -63,10 +63,10 @@ def create_embed(entry: Entry, is_cancelling: bool = False) -> discord.Embed:
 
     embed.add_field(name="Registered", value=get_member_string(), inline=False)
 
-    if is_cancelling:
+    if is_cancelling and cancel_delay > 0:
         embed.add_field(
             name="MESSAGE WILL BE REMOVED",
-            value=f"MESSAGE WILL BE REMOVED IN {config.cancel_timeout} SECONDS. PRESS {cancel_emoji} AGAIN TO ABORT.",
+            value=f"MESSAGE WILL BE REMOVED IN {cancel_delay} SECONDS. PRESS {cancel_emoji} AGAIN TO ABORT.",
             inline=False
         )
 

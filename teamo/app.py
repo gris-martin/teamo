@@ -21,7 +21,7 @@ from teamo import models, utils, config, database, teamcreation
 
 
 class Teamo(commands.Cog):
-    def __init__(self, bot, database_name):
+    def __init__(self, bot: commands.Bot, database_name):
         self.bot = bot
         Path("db").mkdir(exist_ok=True)
         self.db = database.Database(database_name)
@@ -41,8 +41,10 @@ class Teamo(commands.Cog):
             await self.db.delete_entry(message_id)
 
     async def cancel_after(self, message_id: int):
+        entry = await self.db.get_entry(message_id)
+        cancel_delay = await self.db.get_setting(entry.server_id, models.SettingsType.CANCEL_DELAY)
         try:
-            await asyncio.sleep(config.cancel_timeout)
+            await asyncio.sleep(cancel_delay)
         except asyncio.CancelledError:
             return
         await self.delete_entry(message_id)
@@ -64,7 +66,8 @@ class Teamo(commands.Cog):
         )
         try:
             message = self.cached_messages[message_id]
-            await message.edit(embed=utils.create_embed(entry, is_cancelling))
+            cancel_delay = await self.db.get_setting(entry.server_id, models.SettingsType.CANCEL_DELAY)
+            await message.edit(embed=utils.create_embed(entry, cancel_delay, is_cancelling))
         except discord.NotFound:
             logging.warning(f"Attempted to update a message (ID: {entry.message_id}) that has already been deleted. Deleting message from database.")
             await self.db.delete_entry(entry.message_id)
@@ -99,8 +102,9 @@ class Teamo(commands.Cog):
         logging.info(f"Sent message to Discord: {message}")
         delete_after = await self.db.get_setting(channel.guild.id, models.SettingsType.DELETE_GENERAL_DELAY)
         if delete_after < 0:
-            delete_after = 0
-        await channel.send(message, delete_after=delete_after)
+            await channel.send(message)
+        else:
+            await channel.send(message, delete_after=delete_after)
 
     @commands.Cog.listener()
     async def on_connect(self):
@@ -108,6 +112,7 @@ class Teamo(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
+        # Make sure all messages in database exists in a channel
         entries = await self.db.get_all_entries()
         deleted_ids = []
         for entry in entries:
@@ -124,6 +129,13 @@ class Teamo(commands.Cog):
 
         await self.db.delete_entries(deleted_ids)
 
+        # Create settings entries for servers that don't already have an entry
+        for guild in self.bot.guilds:
+            settings = await self.db.get_settings(guild.id)
+            if settings == None:
+                await self.db.insert_settings(guild.id, models.Settings())
+
+        # Create tasks for updating messages and checking whether a message is finished
         if config.update_interval > 0:
             asyncio.create_task(self.update_timer())
         asyncio.create_task(self.finish_timer())
@@ -290,8 +302,9 @@ class Teamo(commands.Cog):
         self.cached_messages[message.id] = await channel.fetch_message(message.id)
 
         # Remove initial message
-        if config.user_message_delete_delay >= 0:
-            await ctx.message.delete(delay=config.user_message_delete_delay)
+        delete_delay = await self.db.get_setting(ctx.guild.id, models.SettingsType.DELETE_GENERAL_DELAY)
+        if delete_delay >= 0:
+            await ctx.message.delete(delay=delete_delay)
 
     @commands.command()
     async def serversetting(self, ctx: commands.Context, key: str, value: int):
