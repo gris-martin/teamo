@@ -352,7 +352,7 @@ class Teamo(commands.Cog):
         try:
             setting = models.SettingsType.from_string(key)
             v = self.db.get_setting(ctx.guild.id, setting)
-            await self.send_and_log(f"Server setting `{key}`: `{v}`")
+            await self.send_and_log(ctx.channel, f"Server setting `{key}`: `{v}`")
         except ValueError as e:
             print("hej")
             await self.send_and_log(
