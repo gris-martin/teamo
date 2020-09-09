@@ -95,11 +95,11 @@ class Teamo(commands.Cog):
         channel = old_message.channel
         self.cached_messages[message_id] = await channel.fetch_message(message_id)
 
-    @commands.Cog.listener()
+    @commands.Cog.listener
     async def on_connect(self):
         self.startup_done = asyncio.Event()
 
-    @commands.Cog.listener()
+    @commands.Cog.listener
     async def on_ready(self):
         entries = await self.db.get_all_entries()
         deleted_ids = []
@@ -123,7 +123,7 @@ class Teamo(commands.Cog):
         self.startup_done.set()
         logging.info("Teamo is ready!")
 
-    @commands.Cog.listener()
+    @commands.Cog.listener
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
         if payload.member.bot:
             return
@@ -175,7 +175,7 @@ class Teamo(commands.Cog):
             await old_reaction.remove(payload.member)
             await self.sync_message(message_id)
 
-    @commands.Cog.listener()
+    @commands.Cog.listener
     async def on_raw_reaction_remove(self, payload: discord.RawReactionActionEvent):
         await self.startup_done.wait()
         message_id = payload.message_id
@@ -214,7 +214,7 @@ class Teamo(commands.Cog):
             await self.update_message(message_id)
             await self.sync_message(message_id)
 
-    @commands.command()
+    @commands.command
     async def create(self, ctx: discord.ext.commands.Context, *, arg: str):
         await self.startup_done.wait()
         # Parse arguments
