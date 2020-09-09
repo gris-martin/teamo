@@ -9,6 +9,7 @@ import os
 import sys
 import argparse
 import logging
+import dataclasses
 
 # Third party imports
 import discord
@@ -86,8 +87,14 @@ class Teamo(commands.Cog):
             for entry in entries:
                 if entry.start_date > datetime.now():
                     continue
-                channel = await self.bot.fetch_channel(entry.channel_id)
-                await channel.send(embed=teamcreation.create_finish_embed(entry))
+                settings = await self.db.get_settings(entry.server_id)
+                channel_id = entry.channel_id if settings.end_channel == None else settings.end_channel
+                channel = self.bot.get_channel(channel_id)
+                embed = teamcreation.create_finish_embed(entry)
+                if settings.delete_end_delay < 0:
+                    await channel.send(embed=embed)
+                else:
+                    await channel.send(embed=embed, delete_after=settings.delete_end_delay)
                 await self.delete_entry(entry.message_id)
             await asyncio.sleep(config.finish_check_interval)
 
@@ -103,6 +110,12 @@ class Teamo(commands.Cog):
             await channel.send(message)
         else:
             await channel.send(message, delete_after=delete_after)
+
+    async def remove_user_message(self, message: discord.Message):
+        delay = await self.db.get_setting(message.guild.id, models.SettingsType.DELETE_USE_DELAY)
+        if delay < 0:
+            return
+        await message.delete(delay=delay)
 
     @commands.Cog.listener()
     async def on_connect(self):
@@ -231,11 +244,33 @@ class Teamo(commands.Cog):
             await self.update_message(message_id)
             await self.sync_message(message_id)
 
+    @commands.Cog.listener()
+    async def on_command_error(self, ctx: commands.Context, error: commands.CommandError):
+        if isinstance(error, commands.UserInputError):
+            await self.send_and_log(ctx.channel, f"Unknown arguments sent to command \"{ctx.command}\". Try `@{self.bot.user.display_name} help {ctx.command}` for information about using the command.")
+        elif isinstance(error, commands.CommandNotFound):
+            await self.send_and_log(ctx.channel, f"Unknown command: \"{ctx.invoked_with}\". Try `@{self.bot.user.display_name} help` to get a list of available commands.")
+        else:
+            await self.send_and_log(ctx.channel, f"Encountered an error with command {ctx.command}: {error}.")
+            logging.error(f"Encountered an error with command {ctx.command}", exc_info=error)
+        await self.remove_user_message(ctx.message)
+
+    @commands.Cog.listener()
+    async def on_command_completion(self, ctx: commands.Context):
+        print("Command completed")
+        await self.remove_user_message(ctx.message)
+
+    ############## Teamo commands ##############
     @commands.command()
     async def create(self, ctx: commands.Context, *, arg: str):
         await self.startup_done.wait()
-        # Parse arguments
 
+        settings = await self.db.get_settings(ctx.guild.id)
+        teamo_use_channel = ctx.channel if settings.use_channel == None else self.bot.get_channel(settings.use_channel)
+        if teamo_use_channel != ctx.channel:
+            self.send_and_log(ctx.channel, f"Teamo commands can only be used in {teamo_use_channel.mention}. Try again there :)")
+
+        # Parse arguments
         # TODO: Better date parsing
         args = re.match(r"^(\d+) (\d{1,2}:\d{2}) (.+)", arg)
         if (args is None):
@@ -277,12 +312,13 @@ class Teamo(commands.Cog):
             max_players=max_players
         )
         embed = utils.create_embed(entry)
-        message: discord.Message = await ctx.send(embed=embed)
+        teamo_post_channel = ctx.channel if settings.waiting_channel == None else self.bot.get_channel(settings.waiting_channel)
+        message: discord.Message = await teamo_post_channel.send(embed=embed)
         self.cached_messages[message.id] = message
 
         # Create database and runtime entries
         entry.message_id = message.id
-        entry.channel_id = ctx.channel.id
+        entry.channel_id = teamo_post_channel.id
         entry.server_id = ctx.guild.id
         await self.db.insert_entry(entry)
 
@@ -296,28 +332,59 @@ class Teamo(commands.Cog):
 
             await message.add_reaction(utils.cancel_emoji)
 
-        channel = self.bot.get_channel(entry.channel_id)
-        self.cached_messages[message.id] = await channel.fetch_message(message.id)
+        self.cached_messages[message.id] = await teamo_post_channel.fetch_message(message.id)
 
         # Remove initial message
         delete_delay = await self.db.get_setting(ctx.guild.id, models.SettingsType.DELETE_GENERAL_DELAY)
         if delete_delay >= 0:
             await ctx.message.delete(delay=delete_delay)
 
-    @commands.command()
-    async def serversetting(self, ctx: commands.Context, key: str, value: int):
+    ############## Server settings commands ##############
+    @commands.group()
+    async def serversetting(self, ctx: commands.Context):
         if ctx.author.bot:
             return
-        if not ctx.author.guild_permissions.administrator:
-            return
+        if ctx.invoked_subcommand is None:
+            await ctx.send(f"Unknown serversetting command \"{ctx.subcommand_passed}\". Try `@{self.bot.user.display_name} help serversetting` to get a list of available commands.")
 
+    @serversetting.command()
+    async def get(self, ctx: commands.Context, key: str):
         try:
             setting = models.SettingsType.from_string(key)
+            v = self.db.get_setting(ctx.guild.id, setting)
+            await self.send_and_log(f"Server setting `{key}`: `{v}`")
         except ValueError as e:
-            await self.send_and_log(ctx.channel, f"Tried setting unknown setting: {key}.")
-            return
-        await self.db.edit_setting(ctx.guild.id, setting, value)
-        await self.send_and_log(f"Successfully set setting {key} to {value}!")
+            print("hej")
+            await self.send_and_log(
+                ctx.channel,
+                f"Tried getting unknown setting: `{key}`. Valid settings are:\n```{utils.get_settings_string()}```\nTry `@{self.bot.user.display_name} serversetting showall` for more information about available server settings."
+            )
+
+    @serversetting.command()
+    async def showall(self, ctx: commands.Context):
+        settings = await self.db.get_settings(ctx.guild.id)
+        settings_dict = dataclasses.asdict(settings)
+        settings_str = "**Server settings:**\n```"
+        for key, value in settings_dict.items():
+            settings_str += f"  {key:25} {value}\n"
+        settings_str = settings_str[:-2] + "```"
+
+        await self.send_and_log(ctx.channel, settings_str)
+
+    @serversetting.command()
+    async def set(self, ctx: commands.Context, key: str, value: int):
+        try:
+            if not ctx.author.guild_permissions.administrator:
+                await self.send_and_log(ctx.channel, "Only members with the Administrator permission can set Teamo server settings.")
+                return
+            setting = models.SettingsType.from_string(key)
+            await self.db.edit_setting(ctx.guild.id, setting, value)
+            await self.send_and_log(ctx.channel, f"Successfully set `{key}` to `{value}`!")
+        except ValueError as e:
+            await self.send_and_log(
+                ctx.channel,
+                f"Tried setting unknown setting: `{key}`. Valid settings are:\n```{utils.get_settings_string()}```"
+            )
 
 
 def main():

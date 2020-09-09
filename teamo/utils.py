@@ -1,11 +1,11 @@
+import dataclasses
 from datetime import datetime, timedelta
 from typing import List
 from math import floor
-import logging
 
 import discord
 
-from teamo.models import Member, Entry
+from teamo.models import Entry, Settings
 from teamo import config
 
 
@@ -94,3 +94,12 @@ number_emojis = [
     "🔟"]
 
 cancel_emoji = "❌"
+
+
+def get_settings_string() -> str:
+    settings = [f.name for f in dataclasses.fields(Settings)]
+    settings_str = ""
+    for s in settings:
+        settings_str += f"  {s}\n"
+    return settings_str[:-1]
+
