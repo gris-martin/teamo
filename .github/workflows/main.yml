@@ -59,6 +59,7 @@ jobs:
           docker stop teamo-${{ steps.extract_stuff.outputs.branch }}-instance || true
           docker rm teamo-${{ steps.extract_stuff.outputs.branch }}-instance || true
           docker load -i teamo/${{ steps.extract_stuff.outputs.branch }}/teamo-docker.tar
+          touch teamo/${{ steps.extract_stuff.outputs.branch }}/db/teamo.db
     - name: Launch the Docker container
       if: steps.extract_stuff.outputs.branch == 'main'
       uses: appleboy/ssh-action@master
