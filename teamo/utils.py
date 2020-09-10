@@ -2,12 +2,24 @@ import dataclasses
 from datetime import datetime, timedelta
 from typing import List
 from math import floor
+import os
 
 import discord
 
 from teamo.models import Entry, Settings
-from teamo import config
 
+
+def get_update_interval():
+    if 'TEAMO_UPDATE_INTERVAL' in os.environ:
+        return os.environ['TEAMO_UPDATE_INTERVAL']
+    else:
+        return 15
+
+def get_check_interval():
+    if 'TEAMO_CHECK_INTERVAL' in os.environ:
+        return os.environ['TEAMO_CHECK_INTERVAL']
+    else:
+        return 5
 
 def get_date_string(date: datetime, show_date: bool = True) -> str:
     if not show_date:
@@ -74,8 +86,9 @@ def create_embed(entry: Entry, cancel_delay: int = 0, is_cancelling: bool = Fals
     if entry.message_id is not None:
         footer_text += f"ID: {entry.message_id}\n"
     footer_text += f"Last updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
-    if config.update_interval > 0:
-        footer_text += f" (updated every {config.update_interval} seconds)"
+    update_interval = get_update_interval()
+    if update_interval > 0:
+        footer_text += f" (updated every {update_interval} seconds)"
     embed.set_footer(text=footer_text)
 
     return embed

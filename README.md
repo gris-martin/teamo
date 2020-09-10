@@ -51,11 +51,18 @@ Good luck and have fun in the game!
 - **Cancel** - `@Teamo delete|remove|cancel <id>`
 
 ## Developing
+### Environment variables
+Teamo can be configured using a few environment variables:
+
+- `TEAMO_BOT_TOKEN` - The bot token acquired from [Discord Developer Portal](https://discord.com/developers/applications) (required).
+- `TEAMO_UPDATE_INTERVAL` - The update interval of Teamo messages in seconds. Default: 15.
+- `TEAMO_CHECK_INTERVAL` - The interval in seconds for which to check whether a message is done (should trigger the "finished" message). Default: 5
+
 ### Quick-start guide
 To work with Teamo, I recommend doing the following steps in a terminal:
 
-- Set the `TEAMO_BOT_TOKEN` environment variable to the Bot token acquired from the [Discord Developer Portal](https://discord.com/developers/applications).
 - (Install Python >3.8 if not already installed)
+- Set the `TEAMO_BOT_TOKEN` environment variable.
 - Clone the teamo repository
 - Create a virtual environment
 - Install Teamo in edit mode (otherwise the scripts will not have the paths setup correctly)
