@@ -415,6 +415,35 @@ class Teamo(commands.Cog):
                 f"Tried setting unknown setting: `{key}`. Valid settings are:\n```{utils.get_settings_string()}```"
             )
 
+    ############## Other commands ##############
+    @commands.command()
+    async def welcome(self, ctx: commands.Context):
+        '''
+        Create a nice-looking message on how to use Teamo.
+        '''
+        embed = discord.Embed(
+            title="Teamo - Usage",
+            description=
+                "\n[GitHub](https://github.com/hassanbot/TeamoPy)\n\n" +
+                "Use Teamo to check if people want to play, and to make teams at a given time. Use the emotes of the created message to register yourself and others (for example, if you and a friend wants to play, press 2⃣). When the time specified in the original message is reached, the bot will create a new message with information on the number of teams, and the team composition.\n\n" +
+                f"Use mentions ({self.bot.user.mention}) to give a command."
+        )
+
+        embed.add_field(
+            name="Format",
+            value=f"{self.bot.user.mention} <number of players per team> <time to start (hh:mm)> <game>",
+            inline=False
+        )
+        embed.add_field(
+            name="Examples",
+            value=
+                f"{self.bot.user.mention} 5 20:00 League of Legends\n" +
+                f"{self.bot.user.mention} 6 14:26 OW\n",
+            inline=False
+        )
+        await ctx.channel.send(embed=embed)
+
+
 
 def main():
     logging.basicConfig(level=logging.INFO)
