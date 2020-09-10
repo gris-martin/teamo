@@ -59,7 +59,7 @@ class Settings:
         use_channel (int) The channel ID of the channel where Teamo messages will be accepted. None -> Every channel is allowed. Default: None
         waiting_channel (int) The channel ID of the channel where Teamo should post the "waiting" messages. None -> Same as the channel as the command was posted. Default: None
         end_channel (int) The channel ID of the channel where Teamo should post the "end" messages. None -> Same as the channel as the command was posted. Default: None
-        delete_general_delay (int) Number of seconds after Teamo posts a general message (e.g. error message) that it will be deleted. < 0 -> Message will never be deleted. Default: 15
+        delete_general_delay (int) Number of seconds after Teamo posts a general message (e.g. error or help message) that it will be deleted. < 0 -> Message will never be deleted. Default: 15
         delete_use_delay (int) Number of seconds after a message directed at Teamo will be deleted. < 0 -> Message will never be deleted. Default: 5
         delete_end_delay (int) Number of seconds after an "end" message has been posted that it will be deleted. < 0 -> Message will never be deleted. Default: 0
         cancel_delay (int) Number of seconds after a cancel reaction has been pressed that the message will be deleted. < 0 -> Message will be deleted immediately. Defualt: 15
