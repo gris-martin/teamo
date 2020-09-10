@@ -16,7 +16,7 @@ import discord
 from discord.ext import commands
 
 # Internal imports
-from teamo import models, utils, database, teamcreation
+from teamo import models, utils, database, teamcreation, help
 
 
 class Teamo(commands.Cog):
@@ -29,6 +29,7 @@ class Teamo(commands.Cog):
         self.locks: Dict[int, asyncio.Lock] = dict()
         self.cancel_tasks: Dict[int, asyncio.Task] = dict()
         self.startup_done: asyncio.Event
+        self.bot.help_command = help.TeamoHelpCommand(self.db)
 
     async def delete_entry(self, message_id: int):
         async with self.locks[message_id]:
@@ -257,12 +258,22 @@ class Teamo(commands.Cog):
 
     @commands.Cog.listener()
     async def on_command_completion(self, ctx: commands.Context):
-        print("Command completed")
         await self.remove_user_message(ctx.message)
 
     ############## Teamo commands ##############
-    @commands.command()
+    @commands.command(usage="<number of players> <time> <game>")
     async def create(self, ctx: commands.Context, *, arg: str):
+        '''
+        Create a new Teamo message.
+        Arguments:
+            <number of players> The number of players per team.
+            <time> The time when the game should start, of the form hh:mm.
+            <game> The game to play (only used for displaying the game name)
+
+        Examples:
+            @Teamo 5 18:30 League of Legends
+            @Teamo 9 19:12 My Fun Game
+        '''
         await self.startup_done.wait()
 
         settings = await self.db.get_settings(ctx.guild.id)
@@ -341,14 +352,22 @@ class Teamo(commands.Cog):
 
     ############## Server settings commands ##############
     @commands.group()
-    async def serversetting(self, ctx: commands.Context):
+    async def settings(self, ctx: commands.Context):
+        '''
+        Get or set server-specific settings.
+        '''
         if ctx.author.bot:
             return
         if ctx.invoked_subcommand is None:
             await ctx.send(f"Unknown serversetting command \"{ctx.subcommand_passed}\". Try `@{self.bot.user.display_name} help serversetting` to get a list of available commands.")
 
-    @serversetting.command()
+    @settings.command()
     async def get(self, ctx: commands.Context, key: str):
+        '''
+        Get the value of a setting.
+        Arguments:
+            <key>: The setting to get.
+        '''
         try:
             setting = models.SettingsType.from_string(key)
             v = self.db.get_setting(ctx.guild.id, setting)
@@ -360,8 +379,11 @@ class Teamo(commands.Cog):
                 f"Tried getting unknown setting: `{key}`. Valid settings are:\n```{utils.get_settings_string()}```\nTry `@{self.bot.user.display_name} serversetting showall` for more information about available server settings."
             )
 
-    @serversetting.command()
+    @settings.command()
     async def showall(self, ctx: commands.Context):
+        '''
+        Show all settings and their values.
+        '''
         settings = await self.db.get_settings(ctx.guild.id)
         settings_dict = dataclasses.asdict(settings)
         settings_str = "**Server settings:**\n```"
@@ -371,8 +393,15 @@ class Teamo(commands.Cog):
 
         await self.send_and_log(ctx.channel, settings_str)
 
-    @serversetting.command()
+    @settings.command()
     async def set(self, ctx: commands.Context, key: str, value: int):
+        '''
+        Set a setting value.
+        Arguments:
+            <key>: The setting to set.
+            <value>: The value to assign to the setting.
+        '''
+
         try:
             if not ctx.author.guild_permissions.administrator:
                 await self.send_and_log(ctx.channel, "Only members with the Administrator permission can set Teamo server settings.")
