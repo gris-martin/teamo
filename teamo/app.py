@@ -16,7 +16,7 @@ import discord
 from discord.ext import commands
 
 # Internal imports
-from teamo import models, utils, config, database, teamcreation
+from teamo import models, utils, database, teamcreation
 
 
 class Teamo(commands.Cog):
@@ -79,7 +79,7 @@ class Teamo(commands.Cog):
                     await self.update_message(entry)
             except Exception:
                 traceback.print_exc()
-            await asyncio.sleep(config.update_interval)
+            await asyncio.sleep(utils.get_update_interval())
 
     async def finish_timer(self):
         while True:
@@ -96,7 +96,7 @@ class Teamo(commands.Cog):
                 else:
                     await channel.send(embed=embed, delete_after=settings.delete_end_delay)
                 await self.delete_entry(entry.message_id)
-            await asyncio.sleep(config.finish_check_interval)
+            await asyncio.sleep(utils.get_check_interval())
 
     async def sync_message(self, message_id: int):
         old_message = self.cached_messages[message_id]
@@ -147,7 +147,7 @@ class Teamo(commands.Cog):
                 await self.db.insert_settings(guild.id, models.Settings())
 
         # Create tasks for updating messages and checking whether a message is finished
-        if config.update_interval > 0:
+        if utils.get_update_interval() > 0:
             asyncio.create_task(self.update_timer())
         asyncio.create_task(self.finish_timer())
         self.startup_done.set()
