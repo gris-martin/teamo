@@ -424,7 +424,9 @@ class Teamo(commands.Cog):
         embed = discord.Embed(
             title="Teamo - Usage",
             description=
-                "\n[GitHub](https://github.com/hassanbot/TeamoPy)\n\n" +
+                "\n[GitHub](https://github.com/hassanbot/TeamoPy)\n" +
+                "[Readme](https://github.com/hassanbot/TeamoPy/blob/main/README.md)\n" +
+                "[Changelog](https://github.com/hassanbot/TeamoPy/blob/main/CHANGELOG.md)\n\n" +
                 "Use Teamo to check if people want to play, and to make teams at a given time. Use the emotes of the created message to register yourself and others (for example, if you and a friend wants to play, press 2⃣). When the time specified in the original message is reached, the bot will create a new message with information on the number of teams, and the team composition.\n\n" +
                 f"Use mentions ({self.bot.user.mention}) to give a command."
         )
