@@ -40,6 +40,7 @@ jobs:
         then
           echo "::set-output name=token::${{ secrets.TEAMO_BOT_TOKEN_MAIN }}"
         elif [ "$GITHUB_REF_NAME_SLUG" == "deploy" ]
+        then
           echo "::set-output name=token::${{ secrets.TEAMO_BOT_TOKEN_DEPLOY }}"
         else
           echo "::error::Invalid branch: ${{ env.GITHUB_REF_NAME_SLUG }}"
