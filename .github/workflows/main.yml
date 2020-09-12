@@ -36,11 +36,14 @@ jobs:
       id: extract_stuff
     - name: Extract bot token secret (main)
       if: env.GITHUB_REF_NAME_SLUG == 'main'
-      run: echo ::set-output name=bot-token::${{ secrets.TEAMO_BOT_TOKEN_MAIN }}
-      id: get_token
-    - name: Extract bot token secret (deploy)
-      if: env.GITHUB_REF_NAME_SLUG == 'deploy'
-      run: echo ::set-output name=bot-token::${{ secrets.TEAMO_BOT_TOKEN_DEPLOY }}
+      run: |
+        case "$GITHUB_REF_NAME_SLUG" in
+          "main")
+            echo ::set-output name=token::${{ secrets.TEAMO_BOT_TOKEN_MAIN }}
+          "deploy")
+            echo ::set-output name=token::${{ secrets.TEAMO_BOT_TOKEN_DEPLOY }}
+          *)
+            echo "::error::Invalid branch: ${{ env.GITHUB_REF_NAME_SLUG }}"
       id: get_token
     - name: Build and push the Docker image
       run: |
