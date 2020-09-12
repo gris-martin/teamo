@@ -31,7 +31,7 @@ jobs:
     - name: Extract some stuff
       run: |
         echo ::set-output name=version::$(cat VERSION)
-        echo ::set-output name=tag::docker.pkg.github.com/${GITHUB_REPOSITORY}/teamo:${GITHUB_REF_NAME_SLUG}"
+        echo ::set-output name=tag::docker.pkg.github.com/${GITHUB_REPOSITORY}/teamo:${GITHUB_REF_NAME_SLUG}
       id: extract_stuff
     - name: Extract bot token secret (main)
       if: env.GITHUB_REF_NAME_SLUG == 'main'
