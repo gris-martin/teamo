@@ -36,13 +36,14 @@ jobs:
     - name: Extract bot token secret (main)
       if: env.GITHUB_REF_NAME_SLUG == 'main'
       run: |
-        case "$GITHUB_REF_NAME_SLUG" in
-          "main")
-            echo "::set-output name=token::${{ secrets.TEAMO_BOT_TOKEN_MAIN }}"
-          "deploy")
-            echo "::set-output name=token::${{ secrets.TEAMO_BOT_TOKEN_DEPLOY }}"
-          *)
-            echo "::error::Invalid branch: ${{ env.GITHUB_REF_NAME_SLUG }}"
+        if [ "$GITHUB_REF_NAME_SLUG" == "main" ]
+        then
+          echo "::set-output name=token::${{ secrets.TEAMO_BOT_TOKEN_MAIN }}"
+        elif [ "$GITHUB_REF_NAME_SLUG" == "deploy" ]
+          echo "::set-output name=token::${{ secrets.TEAMO_BOT_TOKEN_DEPLOY }}"
+        else
+          echo "::error::Invalid branch: ${{ env.GITHUB_REF_NAME_SLUG }}"
+        fi
       id: get_token
     - name: Build and push the Docker image
       run: |
