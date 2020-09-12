@@ -10,6 +10,7 @@ Changes should be in one of the following categories:
 - New
 - Changes
 - Fixes
+---
 
 ## 1.0.0 - (2020-09-12)
 ---
