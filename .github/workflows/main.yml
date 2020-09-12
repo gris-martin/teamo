@@ -61,7 +61,7 @@ jobs:
         port: '${{ secrets.DEPLOY_PORT }}'
         script: |
           set -e
-          docker login https://docker.pkg.github.com -u ${GITHUB_REPOSITORY_OWNER} -p ${{ secrets.GITHUB_TOKEN }}
+          docker login -u ${GITHUB_REPOSITORY_OWNER} -p ${{ secrets.GITHUB_TOKEN }} https://docker.pkg.github.com
           docker pull ${{ steps.extract_stuff.outputs.tag }}
           docker stop teamo-${GITHUB_REF_NAME}-instance || true
           docker rm teamo-${GITHUB_REF_NAME}-instance || true
