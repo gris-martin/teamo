@@ -48,7 +48,7 @@ jobs:
       id: get_token
     - name: Build and push the Docker image
       run: |
-        echo {{ secrets.GITHUB_TOKEN }} | docker login https://docker.pkg.github.com -u ${GITHUB_REPOSITORY_OWNER} --password-stdin
+        echo ${{ secrets.GITHUB_TOKEN }} | docker login https://docker.pkg.github.com -u ${GITHUB_REPOSITORY_OWNER} --password-stdin
         docker build -t ${{ steps.extract_stuff.outputs.tag }} --build-arg VERSION=${{ steps.extract_stuff.outputs.version }} .
         docker push ${{ steps.extract_stuff.outputs.tag }}
     - name: Pull and start Docker container
