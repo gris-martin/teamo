@@ -31,26 +31,27 @@ jobs:
     - name: Extract some stuff
       run: |
         echo ::set-output name=version::$(cat VERSION)
-        echo ::set-output name=tag::docker.pkg.github.com/${GITHUB_REPOSITORY_OWNER_SLUG}/${GITHUB_REPOSITORY_NAME_SLUG}/teamo:${GITHUB_REF_NAME_SLUG}
-      id: extract_stuff
-    - name: Extract bot token secret (main)
-      if: env.GITHUB_REF_NAME_SLUG == 'main'
-      run: |
         if [ "$GITHUB_REF_NAME_SLUG" == "main" ]
         then
+          echo ::set-output name=tag::docker.pkg.github.com/${GITHUB_REPOSITORY_OWNER_SLUG}/${GITHUB_REPOSITORY_NAME_SLUG}/teamo:${GITHUB_REF_NAME_SLUG}
           echo "::set-output name=token::${{ secrets.TEAMO_BOT_TOKEN_MAIN }}"
         elif [ "$GITHUB_REF_NAME_SLUG" == "deploy" ]
         then
+          echo ::set-output name=tag::docker.pkg.github.com/${GITHUB_REPOSITORY_OWNER_SLUG}/${GITHUB_REPOSITORY_NAME_SLUG}/teamo
           echo "::set-output name=token::${{ secrets.TEAMO_BOT_TOKEN_DEPLOY }}"
         else
           echo "::error::Invalid branch: ${{ env.GITHUB_REF_NAME_SLUG }}"
         fi
-      id: get_token
+      id: extract_variables
     - name: Build and push the Docker image
       run: |
         echo ${{ secrets.GITHUB_TOKEN }} | docker login https://docker.pkg.github.com -u ${GITHUB_REPOSITORY_OWNER} --password-stdin
-        docker build -t ${{ steps.extract_stuff.outputs.tag }} --build-arg VERSION=${{ steps.extract_stuff.outputs.version }} .
-        docker push ${{ steps.extract_stuff.outputs.tag }}
+        docker build -t ${{ steps.extract_variables.outputs.tag }} --build-arg VERSION=${{ steps.extract_variables.outputs.version }} .
+        if [ "$GITHUB_REF_NAME_SLUG" == "deploy" ]
+        then
+          docker tag ${{ steps.extract_variables.outputs.tag }} ${{ steps.extract_variables.outputs.tag }}:${{ steps.extract_variables.outputs.version }}
+        fi
+        docker push ${{ steps.extract_variables.outputs.tag }}
     - name: Pull and start Docker container
       uses: appleboy/ssh-action@master
       with:
@@ -62,11 +63,11 @@ jobs:
         script: |
           set -e
           docker login https://docker.pkg.github.com -u ${{ env.GITHUB_REPOSITORY_OWNER }} -p ${{ secrets.GITHUB_TOKEN }}
-          docker pull ${{ steps.extract_stuff.outputs.tag }}
+          docker pull ${{ steps.extract_variables.outputs.tag }}
           docker stop teamo-${{ env.GITHUB_REF_NAME }}-instance || true
           docker rm teamo-${{ env.GITHUB_REF_NAME }}-instance || true
           touch teamo/${{ env.GITHUB_REF_NAME }}/db/teamo.db
-          docker run -e TEAMO_BOT_TOKEN=${{ steps.get_token.outputs.token }} -d -v $PWD/teamo/${{ env.GITHUB_REF_NAME }}/db/teamo.db:/teamo/db/teamo.db --name teamo-${{ env.GITHUB_REF_NAME }}-instance teamo:${{ env.GITHUB_REF_NAME }}
+          docker run -e TEAMO_BOT_TOKEN=${{ steps.extract_variables.outputs.token }} -d -v $PWD/teamo/${{ env.GITHUB_REF_NAME }}/db/teamo.db:/teamo/db/teamo.db --name teamo-${{ env.GITHUB_REF_NAME }}-instance teamo:${{ env.GITHUB_REF_NAME }}
           sleep 10
           if [ "$( docker container inspect -f '{{.State.Status}}' teamo-${{ env.GITHUB_REF_NAME }}-instance )" == "running" ]; then exit 0; else echo "Docker container is not running. Did it crash during startup?" && exit 1; fi
 
