@@ -38,9 +38,9 @@ jobs:
       run: |
         case "$GITHUB_REF_NAME_SLUG" in
           "main")
-            echo ::set-output name=token::${{ secrets.TEAMO_BOT_TOKEN_MAIN }}
+            echo "::set-output name=token::${{ secrets.TEAMO_BOT_TOKEN_MAIN }}"
           "deploy")
-            echo ::set-output name=token::${{ secrets.TEAMO_BOT_TOKEN_DEPLOY }}
+            echo "::set-output name=token::${{ secrets.TEAMO_BOT_TOKEN_DEPLOY }}"
           *)
             echo "::error::Invalid branch: ${{ env.GITHUB_REF_NAME_SLUG }}"
       id: get_token
