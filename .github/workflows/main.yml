@@ -61,12 +61,12 @@ jobs:
         port: '${{ secrets.DEPLOY_PORT }}'
         script: |
           set -e
-          docker login -u ${GITHUB_REPOSITORY_OWNER} -p ${{ secrets.GITHUB_TOKEN }} https://docker.pkg.github.com
+          docker login https://docker.pkg.github.com -u ${{ env.GITHUB_REPOSITORY_OWNER }} -p ${{ secrets.GITHUB_TOKEN }}
           docker pull ${{ steps.extract_stuff.outputs.tag }}
           docker stop teamo-${GITHUB_REF_NAME}-instance || true
           docker rm teamo-${GITHUB_REF_NAME}-instance || true
           touch teamo/${GITHUB_REF_NAME}/db/teamo.db
-          script: docker run -e TEAMO_BOT_TOKEN=${{ steps.get_token.outputs.token }} -d -v $PWD/teamo/${GITHUB_REF_NAME}/db/teamo.db:/teamo/db/teamo.db --name teamo-${GITHUB_REF_NAME}-instance teamo:${GITHUB_REF_NAME}
+          docker run -e TEAMO_BOT_TOKEN=${{ steps.get_token.outputs.token }} -d -v $PWD/teamo/${GITHUB_REF_NAME}/db/teamo.db:/teamo/db/teamo.db --name teamo-${GITHUB_REF_NAME}-instance teamo:${GITHUB_REF_NAME}
           sleep 10
           if [ "$( docker container inspect -f '{{.State.Status}}' teamo-${GITHUB_REF_NAME}-instance )" == "running" ]; then exit 0; else echo "Docker container is not running. Did it crash during startup?" && exit 1; fi
 
