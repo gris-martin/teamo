@@ -18,6 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+    - uses: FranzDiebold/github-env-vars-action@v1.2.0
     - name: Setup Python environment
       uses: actions/setup-python@v2
       with:
@@ -29,24 +30,24 @@ jobs:
         python setup.py bdist_wheel
     - name: Extract some stuff
       run: |
-        echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
-        echo "##[set-output name=version;]$(cat VERSION})"
+        VERSION=$(cat VERSION)
+        echo ::set-output name=version::${VERSION}
+        echo ::set-output name=tag::docker.pkg.github.com/${GITHUB_REPOSITORY}/teamo:${GITHUB_REF_NAME_SLUG}"
       id: extract_stuff
-    - name: Build the Docker image
+    - name: Extract bot token secret (main)
+      if: env.GITHUB_REF_NAME_SLUG == 'main'
+      run: echo ::set-output name=bot-token::${{ secrets.TEAMO_BOT_TOKEN_MAIN }}
+      id: get_token
+    - name: Extract bot token secret (deploy)
+      if: env.GITHUB_REF_NAME_SLUG == 'deploy'
+      run: echo ::set-output name=bot-token::${{ secrets.TEAMO_BOT_TOKEN_DEPLOY }}
+      id: get_token
+    - name: Build and push the Docker image
       run: |
-        docker build -t teamo:${{ steps.extract_stuff.outputs.branch }} --build-arg VERSION=0.1.0 .
-        docker save -o teamo-docker.tar teamo:${{ steps.extract_stuff.outputs.branch }}
-    - name: Copy docker image to server
-      uses: appleboy/scp-action@master
-      with:
-        host: '${{ secrets.DEPLOY_HOST }}'
-        username: '${{ secrets.DEPLOY_USERNAME }}'
-        passphrase: '${{ secrets.DEPLOY_PASSPHRASE }}'
-        key: '${{ secrets.DEPLOY_KEY }}'
-        port: '${{ secrets.DEPLOY_PORT }}'
-        source: 'teamo-docker.tar'
-        target: teamo/${{ steps.extract_stuff.outputs.branch }}
-    - name: Start Docker container
+        echo {{ secrets.GITHUB_TOKEN }} | docker login https://docker.pkg.github.com -u ${GITHUB_REPOSITORY_OWNER} --password-stdin
+        docker build -t ${{ steps.extract_stuff.outputs.tag }} --build-arg VERSION=${{ steps.extract_stuff.outputs.version }} .
+        docker push ${{ steps.extract_stuff.outputs.tag }}
+    - name: Pull and start Docker container
       uses: appleboy/ssh-action@master
       with:
         host: '${{ secrets.DEPLOY_HOST }}'
@@ -56,41 +57,13 @@ jobs:
         port: '${{ secrets.DEPLOY_PORT }}'
         script: |
           set -e
-          docker stop teamo-${{ steps.extract_stuff.outputs.branch }}-instance || true
-          docker rm teamo-${{ steps.extract_stuff.outputs.branch }}-instance || true
-          docker load -i teamo/${{ steps.extract_stuff.outputs.branch }}/teamo-docker.tar
-          touch teamo/${{ steps.extract_stuff.outputs.branch }}/db/teamo.db
-    - name: Launch the Docker container
-      if: steps.extract_stuff.outputs.branch == 'main'
-      uses: appleboy/ssh-action@master
-      with:
-        host: '${{ secrets.DEPLOY_HOST }}'
-        username: '${{ secrets.DEPLOY_USERNAME }}'
-        passphrase: '${{ secrets.DEPLOY_PASSPHRASE }}'
-        key: '${{ secrets.DEPLOY_KEY }}'
-        port: '${{ secrets.DEPLOY_PORT }}'
-        script: docker run -e TEAMO_BOT_TOKEN=${{ secrets.TEAMO_BOT_TOKEN_MAIN }} -d -v $PWD/teamo/${{ steps.extract_stuff.outputs.branch }}/db/teamo.db:/teamo/db/teamo.db --name teamo-${{ steps.extract_stuff.outputs.branch }}-instance teamo:${{ steps.extract_stuff.outputs.branch }}
-    - name: Launch the Docker container
-      if: steps.extract_stuff.outputs.branch == 'deploy'
-      uses: appleboy/ssh-action@master
-      with:
-        host: '${{ secrets.DEPLOY_HOST }}'
-        username: '${{ secrets.DEPLOY_USERNAME }}'
-        passphrase: '${{ secrets.DEPLOY_PASSPHRASE }}'
-        key: '${{ secrets.DEPLOY_KEY }}'
-        port: '${{ secrets.DEPLOY_PORT }}'
-        script: docker run -e TEAMO_BOT_TOKEN=${{ secrets.TEAMO_BOT_TOKEN_DEPLOY }} -d -v $PWD/teamo/${{ steps.extract_stuff.outputs.branch }}/db/teamo.db:/teamo/db/teamo.db --name teamo-${{ steps.extract_stuff.outputs.branch }}-instance teamo:${{ steps.extract_stuff.outputs.branch }}
-    - name: Make sure the Docker container is running
-      uses: appleboy/ssh-action@master
-      with:
-        host: '${{ secrets.DEPLOY_HOST }}'
-        username: '${{ secrets.DEPLOY_USERNAME }}'
-        passphrase: '${{ secrets.DEPLOY_PASSPHRASE }}'
-        key: '${{ secrets.DEPLOY_KEY }}'
-        port: '${{ secrets.DEPLOY_PORT }}'
-        script: |
+          docker pull ${{ steps.extract_stuff.outputs.tag }}
+          docker stop teamo-${GITHUB_REF_NAME}-instance || true
+          docker rm teamo-${GITHUB_REF_NAME}-instance || true
+          touch teamo/${GITHUB_REF_NAME}/db/teamo.db
+          script: docker run -e TEAMO_BOT_TOKEN=${{ steps.get_token.outputs.token }} -d -v $PWD/teamo/${GITHUB_REF_NAME}/db/teamo.db:/teamo/db/teamo.db --name teamo-${GITHUB_REF_NAME}-instance teamo:${GITHUB_REF_NAME}
           sleep 10
-          if [ "$( docker container inspect -f '{{.State.Status}}' teamo-${{ steps.extract_stuff.outputs.branch }}-instance )" == "running" ]; then exit 0; else echo "Docker container is not running. Did it crash during startup?" && exit 1; fi
+          if [ "$( docker container inspect -f '{{.State.Status}}' teamo-${GITHUB_REF_NAME}-instance )" == "running" ]; then exit 0; else echo "Docker container is not running. Did it crash during startup?" && exit 1; fi
 
 # jobs:
 #   deploy:
