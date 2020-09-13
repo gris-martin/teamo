@@ -32,6 +32,8 @@ jobs:
     - name: Extract some stuff
       run: |
         echo ::set-output name=version::$(cat VERSION)
+        echo Github ref: $GITHUB_REF
+        echo Github ref 2: ${{ env.GITHUB_REF }}
         if [ "$GITHUB_REF_NAME_SLUG" == "main" ]
         then
           echo ::set-output name=tag::docker.pkg.github.com/${GITHUB_REPOSITORY_OWNER_SLUG}/${GITHUB_REPOSITORY_NAME_SLUG}/teamo:${GITHUB_REF_NAME_SLUG}
