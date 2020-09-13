@@ -59,6 +59,7 @@ jobs:
         if [[ $GITHUB_REF == refs/tags/* ]]
         then
           docker tag ${{ steps.extract_variables.outputs.tag }} ${{ steps.extract_variables.outputs.tag }}:${{ steps.extract_variables.outputs.version }}
+          docker tag ${{ steps.extract_variables.outputs.tag }} ${{ steps.extract_variables.outputs.tag }}:latest
         fi
         docker push ${{ steps.extract_variables.outputs.tag }}
     - name: Pull and start Docker container
