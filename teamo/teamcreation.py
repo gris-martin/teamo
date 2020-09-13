@@ -14,7 +14,7 @@ adjectives_filename = "lists/adjectives.list"
 
 
 def generate_name_list(filename: str) -> List[str]:
-    with open(filename) as f:
+    with open(filename, encoding="utf8") as f:
         lines = [line.strip() for line in f.readlines()
                  if not line.startswith("#")]
         return lines

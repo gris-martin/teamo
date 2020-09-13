@@ -1,12 +1,12 @@
 from setuptools import setup, find_packages
 
-with open('README.md') as f:
+with open('README.md', encoding='utf8') as f:
     readme = f.read()
 
-with open('LICENSE') as f:
+with open('LICENSE', encoding='utf8') as f:
     license = f.read()
 
-with open('VERSION') as f:
+with open('VERSION', encoding='utf8') as f:
     version = f.read()
 
 setup(

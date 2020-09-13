@@ -33,10 +33,10 @@ def test_generate_name():
     name = teamcreation.generate_name()
     names = name.split()
     assert len(names) == 2
-    with open(teamcreation.adjectives_filename) as f:
+    with open(teamcreation.adjectives_filename, encoding="utf8") as f:
         lines = f.read().splitlines()
         assert names[0].lower() in lines
-    with open(teamcreation.noun_filename) as f:
+    with open(teamcreation.noun_filename, encoding="utf8") as f:
         lines = f.read().splitlines()
         assert names[1].lower() in lines
 
