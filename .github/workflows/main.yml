@@ -80,7 +80,7 @@ jobs:
           sleep 10
           if [ "$( docker container inspect -f '{{.State.Status}}' teamo-${{ env.GITHUB_REF_NAME }}-instance )" == "running" ]; then exit 0; else echo "Docker container is not running. Did it crash during startup?" && exit 1; fi
     - name: Create Release
-      if: startsWith(github.ref, 'refs/tags/v')
+      if: startsWith(github.ref, 'refs/tags/')
       id: create_release
       uses: actions/create-release@v1
       env:
@@ -93,7 +93,7 @@ jobs:
         draft: false
         prerelease: false
     - name: Upload Release Asset
-      if: startsWith(github.ref, 'refs/tags/v')
+      if: startsWith(github.ref, 'refs/tags/')
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
