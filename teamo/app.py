@@ -406,6 +406,9 @@ class Teamo(commands.Cog):
             await self.send_and_log(ctx.channel, f"Cannot get value of unknown setting: \"{key}\". Valid settings are:\n ```{utils.get_settings_string()}```")
             return
         v = await self.db.get_setting(ctx.guild.id, setting)
+        if key.endswith("channel") and v is not None:
+            channel_name = ctx.guild.get_channel(v)
+            v = f"{v} ({channel_name})"
         await self.send_and_log(ctx.channel, f"Server setting `{key}`: `{v}`")
 
     @settings.command()
