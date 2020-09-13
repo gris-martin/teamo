@@ -13,7 +13,7 @@ setup(
     name="teamo",
     packages=find_packages(),
     license=license,
-    url='https://github.com/hassanbot/TeamoPy',
+    url='https://github.com/hassanbot/teamo',
     author='Martin Törnqvist',
     author_email='gris_martin@hotmail.com',
     description='A Discord bot for creating teams',
