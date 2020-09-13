@@ -448,10 +448,29 @@ class Teamo(commands.Cog):
             await self.send_and_log(ctx.channel, f"Cannot set value of unknown setting: \"{key}\". Valid settings are:\n ```{utils.get_settings_string()}```")
             return
 
+        # Make sure the time zone is a real time zone
         if setting == models.SettingsType.TIMEZONE:
             tzobj = tz.gettz(value)
             if tzobj is None:
                 await self.send_and_log(ctx.channel, f"Invalid time zone: \"{value}\". See https://en.wikipedia.org/wiki/List_of_tz_database_time_zones for a list of valid time zone values.")
+
+        # Make sure the channel exists
+        if setting.is_channel_id():
+            channel_found = False
+            if value.isdigit():
+                channel = await ctx.guild.get_channel(int(value))
+                if channel is not None:
+                    channel_found = True
+            else:
+                for channel in ctx.guild.channels:
+                    if channel.name == value:
+                        channel_found = True
+                        value = str(channel.id)
+                        break
+            if not channel_found:
+                await self.send_and_log(ctx.channel, f"Cannot set `{key}` to `{value}`. No channel with name or ID {value} found on this server.")
+                return
+
 
         await self.db.edit_setting(ctx.guild.id, setting, value)
         await self.send_and_log(ctx.channel, f"Successfully set `{key}` to `{value}`!")
