@@ -325,7 +325,11 @@ class Teamo(commands.Cog):
 
         # date: datetime = date_results[0][1]
         currenttz=settings.get_tzinfo()
-        date = parser.parse(date_str)
+        try:
+            date = parser.parse(date_str)
+        except ParserError:
+            await self.send_and_log(ctx.channel, f"Failed to parse date argument {args.group(2)}")
+            return
         date = date.replace(tzinfo=currenttz)
         datediff = date - datetime.now(tz=currenttz)
         if datediff.total_seconds() < 0:
