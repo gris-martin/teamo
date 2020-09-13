@@ -37,7 +37,6 @@ jobs:
           echo ::set-output name=tag::docker.pkg.github.com/${GITHUB_REPOSITORY_OWNER_SLUG}/${GITHUB_REPOSITORY_NAME_SLUG}/teamo:${GITHUB_REF_NAME_SLUG}
           echo "::set-output name=token::${{ secrets.TEAMO_BOT_TOKEN_MAIN }}"
           echo ::set-output name=deploy_name::main
-          echo ::set-output name=tag_suffix::main
         elif [[ $GITHUB_REF == refs/tags/* ]]
         then
           if [[ $GITHUB_REF_NAME != $(cat VERSION) ]]
@@ -47,7 +46,6 @@ jobs:
           echo ::set-output name=tag::docker.pkg.github.com/${GITHUB_REPOSITORY_OWNER_SLUG}/${GITHUB_REPOSITORY_NAME_SLUG}/teamo
           echo "::set-output name=token::${{ secrets.TEAMO_BOT_TOKEN_DEPLOY }}"
           echo ::set-output name=deploy_name::release
-          echo ::set-output name=tag_suffix::latest
         else
           echo "::error::Invalid branch: $GITHUB_REF"
         fi
@@ -78,7 +76,7 @@ jobs:
           docker rm teamo-${{ steps.extract_variables.outputs.deploy_name }}-instance || true
           mkdir -p teamo/${{ steps.extract_variables.outputs.deploy_name }}/db
           touch teamo/${{ steps.extract_variables.outputs.deploy_name }}/db/teamo.db
-          docker run -e TEAMO_BOT_TOKEN=${{ steps.extract_variables.outputs.token }} -d -v $PWD/teamo/${{ steps.extract_variables.outputs.deploy_name }}/db/teamo.db:/teamo/db/teamo.db --name teamo-${{ steps.extract_variables.outputs.deploy_name }}-instance teamo:${{ steps.extract_variables.outputs.tag_suffix }}
+          docker run -e TEAMO_BOT_TOKEN=${{ steps.extract_variables.outputs.token }} -d -v $PWD/teamo/${{ steps.extract_variables.outputs.deploy_name }}/db/teamo.db:/teamo/db/teamo.db --name teamo-${{ steps.extract_variables.outputs.deploy_name }}-instance ${{ steps.extract_variables.outputs.tag }}
           sleep 10
           if [ "$( docker container inspect -f '{{.State.Status}}' teamo-${{ env.GITHUB_REF_NAME }}-instance )" == "running" ]; then exit 0; else echo "Docker container is not running. Did it crash during startup?" && exit 1; fi
     - name: Create Release
