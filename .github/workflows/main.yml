@@ -75,6 +75,7 @@ jobs:
           docker pull ${{ steps.extract_variables.outputs.tag }}
           docker stop teamo-${{ steps.extract_variables.outputs.deploy_name }}-instance || true
           docker rm teamo-${{ steps.extract_variables.outputs.deploy_name }}-instance || true
+          mkdir -p teamo/${{ steps.extract_variables.outputs.deploy_name }}/db
           touch teamo/${{ steps.extract_variables.outputs.deploy_name }}/db/teamo.db
           docker run -e TEAMO_BOT_TOKEN=${{ steps.extract_variables.outputs.token }} -d -v $PWD/teamo/${{ steps.extract_variables.outputs.deploy_name }}/db/teamo.db:/teamo/db/teamo.db --name teamo-${{ steps.extract_variables.outputs.deploy_name }}-instance teamo:${{ steps.extract_variables.outputs.tag_suffix }}
           sleep 10
