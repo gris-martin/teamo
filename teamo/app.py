@@ -426,6 +426,7 @@ class Teamo(commands.Cog):
         Example:
             settings set delete_use_delay 40
             settings set use_channel 749638923554390096
+            settings set end_channel a-channel-name
         '''
         if not ctx.author.guild_permissions.administrator:
             await self.send_and_log(ctx.channel, "Only members with the Administrator permission can set Teamo server settings.")
