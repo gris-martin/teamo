@@ -12,7 +12,7 @@ Changes should be in one of the following categories:
 - Fixes
 ---
 
-## 1.0.0 - (2020-09-12)
+## 1.0.0 - (2020-09-13)
 ---
 
 ### New
