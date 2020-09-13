@@ -90,8 +90,8 @@ jobs:
         release_name: Teamo version ${{ steps.extract_variables.outputs.version }}
         body: |
           See CHANGELOG.md for changes in this release :)
-      draft: false
-      prerelease: false
+        draft: false
+        prerelease: false
     - name: Upload Release Asset
       if: startsWith(github.ref, 'refs/tags/v')
       uses: actions/upload-release-asset@v1
