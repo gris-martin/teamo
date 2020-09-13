@@ -4,7 +4,8 @@ on:
   push:
     branches:
       - main
-      - deploy
+    tags:
+      - [0-9]+.[0-9]+.[0-9]+
     paths-ignore:
       - tests/**
 
@@ -35,19 +36,27 @@ jobs:
         then
           echo ::set-output name=tag::docker.pkg.github.com/${GITHUB_REPOSITORY_OWNER_SLUG}/${GITHUB_REPOSITORY_NAME_SLUG}/teamo:${GITHUB_REF_NAME_SLUG}
           echo "::set-output name=token::${{ secrets.TEAMO_BOT_TOKEN_MAIN }}"
-        elif [ "$GITHUB_REF_NAME_SLUG" == "deploy" ]
+          echo ::set-output name=deploy_name::main
+          echo ::set-output name=tag_suffix::main
+        elif [ $GITHUB_REF == refs/tags/* ]
         then
-          echo ::set-output name=tag::docker.pkg.github.com/${GITHUB_REPOSITORY_OWNER_SLUG}/${GITHUB_REPOSITORY_NAME_SLUG}/teamo
+          if [ $GITHUB_REF_NAME != $(cat VERSION) ]
+          then
+            echo "::error::Tag name doesn't match VERSION file!"
+          fi
+          echo ::set-output name=tag::docker.pkg.github.com/${GITHUB_REPOSITORY_OWNER_SLUG}/${GITHUB_REPOSITORY_NAME_SLUG}/teamo:latest
           echo "::set-output name=token::${{ secrets.TEAMO_BOT_TOKEN_DEPLOY }}"
+          echo ::set-output name=deploy_name::release
+          echo ::set-output name=tag_suffix::latest
         else
-          echo "::error::Invalid branch: ${{ env.GITHUB_REF_NAME_SLUG }}"
+          echo "::error::Invalid branch: ${{ env.GITHUB_REF }}"
         fi
       id: extract_variables
     - name: Build and push the Docker image
       run: |
         echo ${{ secrets.GITHUB_TOKEN }} | docker login https://docker.pkg.github.com -u ${GITHUB_REPOSITORY_OWNER} --password-stdin
         docker build -t ${{ steps.extract_variables.outputs.tag }} --build-arg VERSION=${{ steps.extract_variables.outputs.version }} .
-        if [ "$GITHUB_REF_NAME_SLUG" == "deploy" ]
+        if [ $GITHUB_REF == refs/tags/* ]
         then
           docker tag ${{ steps.extract_variables.outputs.tag }} ${{ steps.extract_variables.outputs.tag }}:${{ steps.extract_variables.outputs.version }}
         fi
@@ -64,12 +73,35 @@ jobs:
           set -e
           docker login https://docker.pkg.github.com -u ${{ env.GITHUB_REPOSITORY_OWNER }} -p ${{ secrets.GITHUB_TOKEN }}
           docker pull ${{ steps.extract_variables.outputs.tag }}
-          docker stop teamo-${{ env.GITHUB_REF_NAME }}-instance || true
-          docker rm teamo-${{ env.GITHUB_REF_NAME }}-instance || true
-          touch teamo/${{ env.GITHUB_REF_NAME }}/db/teamo.db
-          docker run -e TEAMO_BOT_TOKEN=${{ steps.extract_variables.outputs.token }} -d -v $PWD/teamo/${{ env.GITHUB_REF_NAME }}/db/teamo.db:/teamo/db/teamo.db --name teamo-${{ env.GITHUB_REF_NAME }}-instance teamo:${{ env.GITHUB_REF_NAME }}
+          docker stop teamo-${{ steps.extract_variables.outputs.deploy_name }}-instance || true
+          docker rm teamo-${{ steps.extract_variables.outputs.deploy_name }}-instance || true
+          touch teamo/${{ steps.extract_variables.outputs.deploy_name }}/db/teamo.db
+          docker run -e TEAMO_BOT_TOKEN=${{ steps.extract_variables.outputs.token }} -d -v $PWD/teamo/${{ steps.extract_variables.outputs.deploy_name }}/db/teamo.db:/teamo/db/teamo.db --name teamo-${{ steps.extract_variables.outputs.deploy_name }}-instance teamo:${{ steps.extract_variables.outputs.tag_suffix }}
           sleep 10
           if [ "$( docker container inspect -f '{{.State.Status}}' teamo-${{ env.GITHUB_REF_NAME }}-instance )" == "running" ]; then exit 0; else echo "Docker container is not running. Did it crash during startup?" && exit 1; fi
+    - name: Create Release
+      if: startsWith(github.ref, 'refs/tags/v')
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Teamo version ${{ steps.extract_variables.outputs.version }}
+        body: |
+          See CHANGELOG.md for changes in this release :)
+      draft: false
+      prerelease: false
+    - name: Upload Release Asset
+      if: startsWith(github.ref, 'refs/tags/v')
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: dist/teamo-${{ steps.extract_variables.outputs.version }}-py3-none-any.whl
+        asset_name: Python Wheel
+        asset_content_type: application/octet-stream
 
 # jobs:
 #   deploy:
