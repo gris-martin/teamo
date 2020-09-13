@@ -174,7 +174,8 @@ class Teamo(commands.Cog):
 
         await self.startup_done.wait()
         # If cancel emoji: Start cancel procedure
-        if emoji.name == utils.cancel_emoji:
+        if str(emoji) == utils.cancel_emoji:
+            logging.debug(f"Received cancel emoji on {message_id}")
             cancel_task = asyncio.create_task(self.cancel_after(message_id))
             self.cancel_tasks[message_id] = cancel_task
             await self.update_message(message_id)
@@ -183,6 +184,7 @@ class Teamo(commands.Cog):
 
         # If number emoji: Add or edit member, remove old reactions, update message
         async with self.locks[message_id]:
+            logging.debug(f"Received number emoji {str(emoji)} on {message_id} from user {payload.member.id}")
             num_players = utils.number_emojis.index(emoji.name) + 1
             member = models.Member(
                 payload.member.id, num_players)
@@ -228,7 +230,8 @@ class Teamo(commands.Cog):
             return
 
         # If cancel emoji: Abort cancel procedure
-        if emoji.name == utils.cancel_emoji:
+        if str(emoji) == utils.cancel_emoji:
+            logging.debug(f"Cancel emoji removed on message {message_id}")
             cancel_task = self.cancel_tasks[message_id]
             if cancel_task is None or cancel_task.done():
                 return
@@ -239,6 +242,7 @@ class Teamo(commands.Cog):
         # If number emoji: Remove member, update message
         async with self.locks[message_id]:
             user_id = payload.user_id
+            logging.debug(f"Number emoji {str(emoji)} removed on message {message_id} by user {user_id}")
             db_member = await self.db.get_member(message_id, user_id)
             num_players = utils.number_emojis.index(str(emoji)) + 1
             if db_member.num_players != num_players:
@@ -286,7 +290,7 @@ class Teamo(commands.Cog):
             create 9 19.12 My Fun Game
         '''
         await self.startup_done.wait()
-
+        logging.debug(f"Teamo create command received in channel {ctx.channel.id} by user {ctx.author.id} with args {arg}")
         settings = await self.db.get_settings(ctx.guild.id)
         teamo_use_channel = ctx.channel if settings.use_channel == None else self.bot.get_channel(settings.use_channel)
         if teamo_use_channel != ctx.channel:
@@ -369,6 +373,8 @@ class Teamo(commands.Cog):
         delete_delay = await self.db.get_setting(ctx.guild.id, models.SettingsType.DELETE_GENERAL_DELAY)
         if delete_delay >= 0:
             await ctx.message.delete(delay=delete_delay)
+        logging.debug(f"Teamo message {message.id} created in channel {teamo_post_channel.id}.")
+
 
     ############## Server settings commands ##############
     @commands.group()
@@ -468,6 +474,7 @@ class Teamo(commands.Cog):
             name="Resources",
             value=
                 "[GitHub](https://github.com/hassanbot/TeamoPy)\n" +
+                "[Issues](https://github.com/hassanbot/TeamoPy/issues)\n" +
                 "[Readme](https://github.com/hassanbot/TeamoPy/blob/main/README.md)\n" +
                 "[Changelog](https://github.com/hassanbot/TeamoPy/blob/main/CHANGELOG.md)",
             inline=False
@@ -482,7 +489,7 @@ class Teamo(commands.Cog):
 
 def main():
     load_dotenv('resources/.env')
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.DEBUG)
 
     parser = argparse.ArgumentParser(description='Start the Teamo bot.')
     parser.add_argument(
