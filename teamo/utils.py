@@ -1,33 +1,30 @@
 import dataclasses
 from datetime import datetime, timedelta
-from typing import List
 from math import floor
 import os
 
+from dateutil import parser
 import discord
+from discord import voice_client
 
 from teamo.models import Entry, Settings
 
 
 def get_update_interval():
-    if 'TEAMO_UPDATE_INTERVAL' in os.environ:
-        return os.environ['TEAMO_UPDATE_INTERVAL']
-    else:
-        return 15
+    return int(os.getenv('TEAMO_UPDATE_INTERVAL'))
 
 def get_check_interval():
-    if 'TEAMO_CHECK_INTERVAL' in os.environ:
-        return os.environ['TEAMO_CHECK_INTERVAL']
-    else:
-        return 5
+    return int(os.getenv('TEAMO_CHECK_INTERVAL'))
 
 def get_date_string(date: datetime, show_date: bool = True) -> str:
     if not show_date:
         return date.strftime("%H:%M:%S")
 
-    if date.date() == datetime.today().date():
+    now = datetime.now(tz=date.tzinfo)
+    today = now.date()
+    if date.date() == today:
         return date.strftime("%H:%M:%S") + " today"
-    elif date.date() == datetime.today().date() + timedelta(days=1):
+    elif date.date() == today + timedelta(days=1):
         return date.strftime("%H:%M:%S") + " tomorrow"
     else:
         return date.strftime("%H:%M:%S %Y-%m-%d")
@@ -116,3 +113,46 @@ def get_settings_string() -> str:
         settings_str += f"  {s}\n"
     return settings_str[:-1]
 
+def get_date(date_str: str, settings: Settings) -> datetime:
+    date_str = date_str.replace('.', ':')
+    currenttz=settings.get_tzinfo()
+    date = parser.parse(date_str)
+    date = date.replace(tzinfo=currenttz)
+    datediff = date - datetime.now(tz=currenttz)
+    if datediff.total_seconds() < 0:
+        if datediff + timedelta(days=1) > timedelta():
+            date += timedelta(days=1)
+        else:
+            raise ValueError(f"Invalid date string: \"{date_str}\" cannot be converted to datetime object")
+    return date
+
+def get_tzname_from_region(region: discord.VoiceRegion):
+    tz_lookup = {
+        discord.VoiceRegion.amsterdam: "Europe/Amsterdam",
+        discord.VoiceRegion.brazil: "America/Sao_Paulo",
+        discord.VoiceRegion.dubai: "Asia/Dubai",
+        discord.VoiceRegion.eu_central: "Europe/Paris",
+        discord.VoiceRegion.eu_west: "Europe/London",
+        discord.VoiceRegion.europe: "Europe/Stockholm",
+        discord.VoiceRegion.frankfurt: "Europe/Berlin",
+        discord.VoiceRegion.hongkong: "Asia/Hong_Kong",
+        discord.VoiceRegion.india: "Asia/Kolkata",
+        discord.VoiceRegion.japan: "Asia/Tokyo",
+        discord.VoiceRegion.london: "Europe/London",
+        discord.VoiceRegion.russia: "Europe/Moscow",
+        discord.VoiceRegion.singapore: "Asia/Singapore",
+        discord.VoiceRegion.southafrica: "Africa/Johannesburg",
+#        discord.VoiceRegion.south_korea: "Asia/Seoul",
+        discord.VoiceRegion.sydney: "Australia/Sydney",
+        discord.VoiceRegion.us_central: "America/Chicago",
+        discord.VoiceRegion.us_east: "America/New_York",
+        discord.VoiceRegion.us_south: "America/Chicago",
+        discord.VoiceRegion.us_west: "America/Los_Angeles",
+        discord.VoiceRegion.vip_amsterdam: "Europe/Amsterdam",
+        discord.VoiceRegion.vip_us_east: "America/New_York",
+        discord.VoiceRegion.vip_us_west: "America/Los_Angeles"
+    }
+    if region in tz_lookup.keys():
+        return tz_lookup[region]
+    else:
+        raise ValueError(f"Cannot convert Discord region to time zone. Unknown region: \"{region}\"")

@@ -13,6 +13,8 @@ import dataclasses
 # Third party imports
 import discord
 from discord.ext import commands
+from dateutil import parser, tz
+from dotenv import load_dotenv
 
 # Internal imports
 from teamo import models, utils, database, teamcreation, help
@@ -23,7 +25,6 @@ class Teamo(commands.Cog):
         self.bot = bot
         Path("db").mkdir(exist_ok=True)
         self.db = database.Database(database_name)
-        asyncio.run(self.db.init())
         self.cached_messages: Dict[int, discord.Message] = dict()
         self.locks: Dict[int, asyncio.Lock] = dict()
         self.cancel_tasks: Dict[int, asyncio.Task] = dict()
@@ -119,6 +120,7 @@ class Teamo(commands.Cog):
 
     @commands.Cog.listener()
     async def on_connect(self):
+        await self.db.init()
         self.startup_done = asyncio.Event()
 
     @commands.Cog.listener()
@@ -144,7 +146,8 @@ class Teamo(commands.Cog):
         for guild in self.bot.guilds:
             settings = await self.db.get_settings(guild.id)
             if settings == None:
-                await self.db.insert_settings(guild.id, models.Settings())
+                tzinfo = utils.get_tzname_from_region(guild.region)
+                await self.db.insert_settings(guild.id, models.Settings(timezone=tzinfo))
 
         # Create tasks for updating messages and checking whether a message is finished
         if utils.get_update_interval() > 0:
@@ -270,8 +273,8 @@ class Teamo(commands.Cog):
             <game> The game to play (only used for displaying the game name)
 
         Examples:
-            @Teamo 5 18:30 League of Legends
-            @Teamo 9 19:12 My Fun Game
+            create 5 18:30 League of Legends
+            create 9 19.12 My Fun Game
         '''
         await self.startup_done.wait()
 
@@ -282,7 +285,7 @@ class Teamo(commands.Cog):
 
         # Parse arguments
         # TODO: Better date parsing
-        args = re.match(r"^(\d+) (\d{1,2}:\d{2}) (.+)", arg)
+        args = re.match(r"^(\d+) (\d{1,2}[:\.]\d{2}) (.+)", arg)
         if (args is None):
             # TODO: Better error message
             await self.send_and_log(ctx.channel, "Invalid arguments to create command: {}".format(arg))
@@ -299,14 +302,23 @@ class Teamo(commands.Cog):
 
         #   - Date
         date_str = args.group(2)
-        date_results = search_dates(date_str)
-        if date_results is None or len(date_results) == 0:
-            await self.send_and_log(ctx.channel, "Invalid date: {}".format(date_str))
-            return
+        date_str = date_str.replace('\.', ':')
+        # date_results = search_dates(date_str)
+        # if date_results is None or len(date_results) == 0:
+        #     await self.send_and_log(ctx.channel, "Invalid date/time: {}".format(date_str))
+        #     return
 
-        date = date_results[0][1]
-        if date < datetime.now():
-            date += timedelta(1)
+        # date: datetime = date_results[0][1]
+        currenttz=settings.get_tzinfo()
+        date = parser.parse(date_str)
+        date = date.replace(tzinfo=currenttz)
+        datediff = date - datetime.now(tz=currenttz)
+        if datediff.total_seconds() < 0:
+            if datediff + timedelta(days=1) > timedelta():
+                date += timedelta(days=1)
+            else:
+                await self.send_and_log(ctx.channel, "Invalid date/time: {}".format(date_str))
+                return
 
         #   - Game
         game = args.group(3)
@@ -367,16 +379,12 @@ class Teamo(commands.Cog):
         Arguments:
             <key>: The setting to get.
         '''
-        try:
-            setting = models.SettingsType.from_string(key)
-            v = self.db.get_setting(ctx.guild.id, setting)
-            await self.send_and_log(ctx.channel, f"Server setting `{key}`: `{v}`")
-        except ValueError as e:
-            print("hej")
-            await self.send_and_log(
-                ctx.channel,
-                f"Tried getting unknown setting: `{key}`. Valid settings are:\n```{utils.get_settings_string()}```\nTry `@{self.bot.user.display_name} serversetting showall` for more information about available server settings."
-            )
+        setting = models.SettingsType.from_string(key)
+        if setting is None:
+            await self.send_and_log(ctx.channel, f"Cannot get value of unknown setting: \"{key}\". Valid settings are:\n ```{utils.get_settings_string()}```")
+            return
+        v = await self.db.get_setting(ctx.guild.id, setting)
+        await self.send_and_log(ctx.channel, f"Server setting `{key}`: `{v}`")
 
     @settings.command()
     async def showall(self, ctx: commands.Context):
@@ -388,31 +396,38 @@ class Teamo(commands.Cog):
         settings_str = "**Server settings:**\n```"
         for key, value in settings_dict.items():
             settings_str += f"  {key:25} {value}\n"
-        settings_str = settings_str[:-2] + "```"
+        settings_str = settings_str[:-1] + "```"
 
         await self.send_and_log(ctx.channel, settings_str)
 
     @settings.command()
-    async def set(self, ctx: commands.Context, key: str, value: int):
+    async def set(self, ctx: commands.Context, key: str, value: str):
         '''
         Set a setting value.
         Arguments:
             <key>: The setting to set.
             <value>: The value to assign to the setting.
-        '''
 
-        try:
-            if not ctx.author.guild_permissions.administrator:
-                await self.send_and_log(ctx.channel, "Only members with the Administrator permission can set Teamo server settings.")
-                return
-            setting = models.SettingsType.from_string(key)
-            await self.db.edit_setting(ctx.guild.id, setting, value)
-            await self.send_and_log(ctx.channel, f"Successfully set `{key}` to `{value}`!")
-        except ValueError as e:
-            await self.send_and_log(
-                ctx.channel,
-                f"Tried setting unknown setting: `{key}`. Valid settings are:\n```{utils.get_settings_string()}```"
-            )
+        Example:
+            settings set delete_use_delay 40
+            settings set use_channel 749638923554390096
+        '''
+        if not ctx.author.guild_permissions.administrator:
+            await self.send_and_log(ctx.channel, "Only members with the Administrator permission can set Teamo server settings.")
+            return
+
+        setting = models.SettingsType.from_string(key)
+        if setting is None:
+            await self.send_and_log(ctx.channel, f"Cannot set value of unknown setting: \"{key}\". Valid settings are:\n ```{utils.get_settings_string()}```")
+            return
+
+        if setting == models.SettingsType.TIMEZONE:
+            tzobj = tz.gettz(value)
+            if tzobj is None:
+                await self.send_and_log(ctx.channel, f"Invalid time zone: \"{value}\". See https://en.wikipedia.org/wiki/List_of_tz_database_time_zones for a list of valid time zone values.")
+
+        await self.db.edit_setting(ctx.guild.id, setting, value)
+        await self.send_and_log(ctx.channel, f"Successfully set `{key}` to `{value}`!")
 
     ############## Other commands ##############
     @commands.command()
@@ -423,30 +438,41 @@ class Teamo(commands.Cog):
         embed = discord.Embed(
             title="Teamo - Usage",
             description=
-                "\n[GitHub](https://github.com/hassanbot/TeamoPy)\n" +
-                "[Readme](https://github.com/hassanbot/TeamoPy/blob/main/README.md)\n" +
-                "[Changelog](https://github.com/hassanbot/TeamoPy/blob/main/CHANGELOG.md)\n\n" +
                 "Use Teamo to check if people want to play, and to make teams at a given time. Use the emotes of the created message to register yourself and others (for example, if you and a friend wants to play, press 2⃣). When the time specified in the original message is reached, the bot will create a new message with information on the number of teams, and the team composition.\n\n" +
                 f"Use mentions ({self.bot.user.mention}) to give a command."
         )
 
         embed.add_field(
             name="Format",
-            value=f"{self.bot.user.mention} <number of players per team> <time to start (hh:mm)> <game>",
+            value=f"{self.bot.user.mention} create <number of players per team> <time to start (hh:mm)> <game>",
             inline=False
         )
         embed.add_field(
             name="Examples",
             value=
-                f"{self.bot.user.mention} 5 20:00 League of Legends\n" +
-                f"{self.bot.user.mention} 6 14:26 OW\n",
+                f"{self.bot.user.mention} create 5 20:00 League of Legends\n" +
+                f"{self.bot.user.mention} create 6 14:26 OW\n",
             inline=False
         )
+
+        embed.add_field(
+            name="Resources",
+            value=
+                "[GitHub](https://github.com/hassanbot/TeamoPy)\n" +
+                "[Readme](https://github.com/hassanbot/TeamoPy/blob/main/README.md)\n" +
+                "[Changelog](https://github.com/hassanbot/TeamoPy/blob/main/CHANGELOG.md)",
+            inline=False
+        )
+
+        with open("VERSION") as f:
+            embed.set_footer(text=f"Message generated by Teamo version {f.read()}")
+
         await ctx.channel.send(embed=embed)
 
 
 
 def main():
+    load_dotenv('resources/.env')
     logging.basicConfig(level=logging.INFO)
 
     parser = argparse.ArgumentParser(description='Start the Teamo bot.')
@@ -471,7 +497,10 @@ def main():
         logging.error("Missing bot token. Set the TEAMO_BOT_TOKEN environment variable to the bot token found on the Discord Developer Portal.")
         sys.exit(1)
 
-    bot.run(token)
+    try:
+        bot.run(token)
+    finally:
+        bot.db
 
 if __name__ == "__main__":
     main()

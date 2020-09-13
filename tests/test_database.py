@@ -15,17 +15,21 @@ async def db():
         yield db
 
 @pytest.mark.asyncio
-async def test_insert_entry(db):
+async def test_insert_entry(db: Database):
+    server_id = 0
+    settings = models.Settings()
+    await db.insert_settings(server_id, settings)
     entry = models.Entry(
         message_id = 0,
         channel_id = 0,
-        server_id = 0,
+        server_id = server_id,
         game = "Testgame",
-        start_date = datetime.now(),
+        start_date = datetime.now(tz=settings.get_tzinfo()),
         max_players = 1
     )
 
     await db.insert_entry(entry)
+
     db_entry = await db.get_entry(0)
     assert entry == db_entry
 
@@ -47,10 +51,13 @@ async def test_insert_entry(db):
 
 @pytest.mark.asyncio
 async def test_delete_member(db):
+    server_id = 0
+    settings = models.Settings()
+    await db.insert_settings(server_id, settings)
     entry = models.Entry(
         message_id = 0,
         channel_id = 0,
-        server_id = 0,
+        server_id = server_id,
         game = "Testgame",
         start_date = datetime.now(),
         max_players = 4
@@ -83,10 +90,13 @@ async def test_delete_member(db):
 
 @pytest.mark.asyncio
 async def test_get_member(db):
+    server_id = 0
+    settings = models.Settings()
+    await db.insert_settings(server_id, settings)
     entry = models.Entry(
         message_id = 0,
         channel_id = 0,
-        server_id = 0,
+        server_id = server_id,
         game = "Testgame",
         start_date = datetime.now(),
         max_players = 4
@@ -105,10 +115,13 @@ async def test_get_member(db):
 
 @pytest.mark.asyncio
 async def test_insert_member(db):
+    server_id = 0
+    settings = models.Settings()
+    await db.insert_settings(server_id, settings)
     entry = models.Entry(
         message_id = 0,
         channel_id = 0,
-        server_id = 0,
+        server_id = server_id,
         game = "Testgame",
         start_date = datetime.now(),
         max_players = 1
@@ -137,12 +150,15 @@ async def test_insert_member(db):
 
 @pytest.mark.asyncio
 async def test_delete_entry(db):
+    server_id = 0
+    settings = models.Settings()
+    await db.insert_settings(server_id, settings)
     entry = models.Entry(
         message_id = 0,
         channel_id = 0,
-        server_id = 0,
+        server_id = server_id,
         game = "Testgame",
-        start_date = datetime.now(),
+        start_date = datetime.now(settings.get_tzinfo()),
         max_players = 1
     )
 

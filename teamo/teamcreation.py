@@ -9,8 +9,8 @@ from teamo.models import Member, Entry
 from teamo.utils import get_date_string
 
 current_filepath = pathlib.Path(__file__).parent.absolute()
-noun_filename = "lists/nouns.list"
-adjectives_filename = "lists/adjectives.list"
+noun_filename = "resources/nouns.list"
+adjectives_filename = "resources/adjectives.list"
 
 
 def generate_name_list(filename: str) -> List[str]:

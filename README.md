@@ -118,4 +118,4 @@ To debug tests, you first have to configure the test runner by running `Python: 
 
 Issues and pull requests are welcome :) To do a pull request, create a fork of this repository, do the changes, and create the pull request. See [this guide](https://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/creating-a-pull-request-from-a-fork) for more info.
 
-One good way to help out is to expand the nouns and adjectives in the `lists/nouns.list` and `lists/adjectives.list` files. They will be used when creating the teams!
+One good way to help out is to expand the nouns and adjectives in the `resources/nouns.list` and `resources/adjectives.list` files. They will be used when creating the teams!
