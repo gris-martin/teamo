@@ -385,7 +385,7 @@ class Teamo(commands.Cog):
         if ctx.author.bot:
             return
         if ctx.invoked_subcommand is None:
-            await ctx.send(f"Unknown serversetting command \"{ctx.subcommand_passed}\". Try `@{self.bot.user.display_name} help serversetting` to get a list of available commands.")
+            await ctx.send(f"Unknown settings command \"{ctx.subcommand_passed}\". Try `@{self.bot.user.display_name} help settings` to get a list of available commands.")
 
     @settings.command()
     async def get(self, ctx: commands.Context, key: str):
