@@ -14,6 +14,7 @@ import dataclasses
 import discord
 from discord.ext import commands
 from dateutil import parser, tz
+from dateutil.parser._parser import ParserError
 from dotenv import load_dotenv
 
 # Internal imports
@@ -120,6 +121,7 @@ class Teamo(commands.Cog):
             return
         await message.delete(delay=delay)
 
+    ############## Discord events ##############
     @commands.Cog.listener()
     async def on_connect(self):
         await self.db.init()
@@ -415,6 +417,10 @@ class Teamo(commands.Cog):
         settings_dict = dataclasses.asdict(settings)
         settings_str = "**Server settings:**\n```"
         for key, value in settings_dict.items():
+            if key.endswith("channel") and value is not None:
+                channel_name = ctx.guild.get_channel(value).name
+                value = f"{value} ({channel_name})"
+
             settings_str += f"  {key:25} {value}\n"
         settings_str = settings_str[:-1] + "```"
 
