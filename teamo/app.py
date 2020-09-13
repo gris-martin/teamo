@@ -295,7 +295,8 @@ class Teamo(commands.Cog):
         settings = await self.db.get_settings(ctx.guild.id)
         teamo_use_channel = ctx.channel if settings.use_channel == None else self.bot.get_channel(settings.use_channel)
         if teamo_use_channel != ctx.channel:
-            self.send_and_log(ctx.channel, f"Teamo commands can only be used in {teamo_use_channel.mention}. Try again there :)")
+            await self.send_and_log(ctx.channel, f"Teamo commands can only be used in {teamo_use_channel.mention}. Try again there :)")
+            return
 
         # Parse arguments
         # TODO: Better date parsing
