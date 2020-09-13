@@ -26,9 +26,7 @@ setup(
         'python-dotenv'
     ],
     data_files=[
-        (
-            'lists', ['lists/adjectives.list', 'lists/nouns.list'],
-            '.', ['.env'])
+        ('resources', ['resources/adjectives.list', 'resources/nouns.list', 'resources/.env'])
     ],
     entry_points={
         'console_scripts': [
