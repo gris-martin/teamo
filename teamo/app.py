@@ -248,6 +248,15 @@ class Teamo(commands.Cog):
             await self.sync_message(message_id)
 
     @commands.Cog.listener()
+    async def on_raw_message_delete(self, payload: discord.RawMessageDeleteEvent):
+        message_id = payload.message_id
+        db_entry = await self.db.get_entry(message_id)
+        if (db_entry is None):
+            return
+        logging.info(f"Teamo message {message_id} was deleted by a user. Removing database entry.")
+        await self.db.delete_entry(message_id)
+
+    @commands.Cog.listener()
     async def on_command_error(self, ctx: commands.Context, error: commands.CommandError):
         if isinstance(error, commands.UserInputError):
             await self.send_and_log(ctx.channel, f"Unknown arguments sent to command \"{ctx.command}\". Try `@{self.bot.user.display_name} help {ctx.command}` for information about using the command.")
