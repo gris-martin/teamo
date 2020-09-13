@@ -33,12 +33,12 @@ class Teamo(commands.Cog):
 
     async def delete_entry(self, message_id: int):
         async with self.locks[message_id]:
+            # Delete message from db
+            await self.db.delete_entry(message_id)
+
             # Delete message from discord
             await self.cached_messages[message_id].delete()
             self.cached_messages[message_id] = None
-
-            # Delete message from db
-            await self.db.delete_entry(message_id)
 
     async def cancel_after(self, message_id: int):
         entry = await self.db.get_entry(message_id)
@@ -254,11 +254,10 @@ class Teamo(commands.Cog):
     @commands.Cog.listener()
     async def on_raw_message_delete(self, payload: discord.RawMessageDeleteEvent):
         message_id = payload.message_id
-        db_entry = await self.db.get_entry(message_id)
-        if (db_entry is None):
-            return
-        logging.info(f"Teamo message {message_id} was deleted by a user. Removing database entry.")
-        await self.db.delete_entry(message_id)
+        entry_exists = await self.db.exists_entry(message_id)
+        if entry_exists:
+            logging.info(f"Teamo message {message_id} was deleted by a user. Removing database entry.")
+            await self.db.delete_entry(message_id)
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx: commands.Context, error: commands.CommandError):

@@ -88,6 +88,16 @@ class Database:
         return entry
 
     @check_connected
+    async def exists_entry(self, message_id: int, db=None) -> bool:
+        cursor = await db.execute(
+            "SELECT * FROM entries WHERE entry_id=?", (message_id,)
+        )
+        row = await cursor.fetchone()
+        if row is None:
+            return False
+        return True
+
+    @check_connected
     async def insert_entry(self, entry: models.Entry, db=None):
         await db.execute(
             "INSERT INTO entries VALUES (?, ?, ?, ?, ?, ?)",
