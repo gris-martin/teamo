@@ -1,7 +1,9 @@
 from typing import List
-from datetime import datetime
+from datetime import datetime, timezone, tzinfo
 from dataclasses import dataclass, field
 from enum import Enum, auto
+
+from dateutil import tz
 
 
 @dataclass
@@ -12,6 +14,13 @@ class Member:
 
 @dataclass
 class Entry:
+    ''' Class for storing information of a single Teamo entry.
+
+    Instances of this class should be created with the create_with_tz class
+    method, and not by the default constructor (as the latter will yield a
+    non-aware datetime object)
+    '''
+
     message_id: int = None
     channel_id: int = None
     server_id: int = None
@@ -19,6 +28,12 @@ class Entry:
     start_date: datetime = None
     max_players: int = None
     members: List[Member] = field(default_factory=list)
+
+    @classmethod
+    def create_with_tz(cls, *args, tzinfo: tzinfo):
+        d: datetime = args[4]  # start_date argument
+        d = d.replace(tzinfo=tzinfo)
+        return cls(*args[0:4], d, *args[5:])
 
 
 class SettingsType(Enum):
@@ -29,6 +44,7 @@ class SettingsType(Enum):
     DELETE_USE_DELAY = auto()
     DELETE_END_DELAY = auto()
     CANCEL_DELAY = auto()
+    TIMEZONE = auto()
 
     @classmethod
     def from_string(cls, v: str):
@@ -39,7 +55,8 @@ class SettingsType(Enum):
         elif v == 'delete_use_delay': return cls.DELETE_USE_DELAY
         elif v == 'delete_end_delay': return cls.DELETE_END_DELAY
         elif v == 'cancel_delay': return cls.CANCEL_DELAY
-        else: raise ValueError(f"Cannot convert string '{v}' to SettingsType enum.")
+        elif v == 'timezone': return cls.TIMEZONE
+        else: return None
 
     def to_string(self) -> str:
         if self == self.USE_CHANNEL: return 'use_channel'
@@ -49,7 +66,8 @@ class SettingsType(Enum):
         elif self == self.DELETE_USE_DELAY: return 'delete_use_delay'
         elif self == self.DELETE_END_DELAY: return 'delete_end_delay'
         elif self == self.CANCEL_DELAY: return 'cancel_delay'
-        else: raise ValueError(f"Cannot convert SettingsType enum '{self}' to string. Unknown setting.")
+        elif self == self.TIMEZONE: return 'timezone'
+        else: return None
 
 @dataclass
 class Settings:
@@ -62,12 +80,17 @@ class Settings:
         delete_general_delay (int) Number of seconds after Teamo posts a general message (e.g. error or help message) that it will be deleted. < 0 -> Message will never be deleted. Default: 15
         delete_use_delay (int) Number of seconds after a message directed at Teamo will be deleted. < 0 -> Message will never be deleted. Default: 5
         delete_end_delay (int) Number of seconds after an "end" message has been posted that it will be deleted. < 0 -> Message will never be deleted. Default: 0
-        cancel_delay (int) Number of seconds after a cancel reaction has been pressed that the message will be deleted. < 0 -> Message will be deleted immediately. Defualt: 15
+        cancel_delay (int) Number of seconds after a cancel reaction has been pressed that the message will be deleted. < 0 -> Message will be deleted immediately. Default: 15
+        timezone (str) The timezone of the server, specified as a IANA timezone database name. Default: "Europe/Stockholm"
     '''
     use_channel: int = None
     waiting_channel: int = None
     end_channel: int = None
-    delete_general_delay: int = 15
-    delete_use_delay: int = 5
-    delete_end_delay: int = 0
-    cancel_delay: int = 15
+    delete_general_delay: int = 30
+    delete_use_delay: int = 30
+    delete_end_delay: int = 60 * 60
+    cancel_delay: int = 30
+    timezone: str = None
+
+    def get_tzinfo(self) -> tzinfo:
+        return tz.gettz(self.timezone)

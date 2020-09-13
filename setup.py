@@ -22,10 +22,13 @@ setup(
     install_requires=[
         'aiosqlite',
         'dateparser',
-        'discord.py~=1.4'
+        'discord.py~=1.4',
+        'python-dotenv'
     ],
     data_files=[
-        ('lists', ['lists/adjectives.list', 'lists/nouns.list'])
+        (
+            'lists', ['lists/adjectives.list', 'lists/nouns.list'],
+            '.', ['.env'])
     ],
     entry_points={
         'console_scripts': [
