@@ -34,15 +34,15 @@ jobs:
         echo ::set-output name=version::$(cat VERSION)
         echo Github ref: $GITHUB_REF
         echo Github ref 2: ${{ env.GITHUB_REF }}
-        if [ "$GITHUB_REF_NAME_SLUG" == "main" ]
+        if [[ "$GITHUB_REF_NAME_SLUG" == "main" ]]
         then
           echo ::set-output name=tag::docker.pkg.github.com/${GITHUB_REPOSITORY_OWNER_SLUG}/${GITHUB_REPOSITORY_NAME_SLUG}/teamo:${GITHUB_REF_NAME_SLUG}
           echo "::set-output name=token::${{ secrets.TEAMO_BOT_TOKEN_MAIN }}"
           echo ::set-output name=deploy_name::main
           echo ::set-output name=tag_suffix::main
-        elif [ $GITHUB_REF == refs/tags/* ]
+        elif [[ $GITHUB_REF == refs/tags/* ]]
         then
-          if [ $GITHUB_REF_NAME != $(cat VERSION) ]
+          if [[ $GITHUB_REF_NAME != $(cat VERSION) ]]
           then
             echo "::error::Tag name doesn't match VERSION file!"
           fi
@@ -51,14 +51,14 @@ jobs:
           echo ::set-output name=deploy_name::release
           echo ::set-output name=tag_suffix::latest
         else
-          echo "::error::Invalid branch: ${{ env.GITHUB_REF }}"
+          echo "::error::Invalid branch: $GITHUB_REF"
         fi
       id: extract_variables
     - name: Build and push the Docker image
       run: |
         echo ${{ secrets.GITHUB_TOKEN }} | docker login https://docker.pkg.github.com -u ${GITHUB_REPOSITORY_OWNER} --password-stdin
         docker build -t ${{ steps.extract_variables.outputs.tag }} --build-arg VERSION=${{ steps.extract_variables.outputs.version }} .
-        if [ $GITHUB_REF == refs/tags/* ]
+        if [[ $GITHUB_REF == refs/tags/* ]]
         then
           docker tag ${{ steps.extract_variables.outputs.tag }} ${{ steps.extract_variables.outputs.tag }}:${{ steps.extract_variables.outputs.version }}
         fi
