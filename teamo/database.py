@@ -127,6 +127,7 @@ class Database:
             "SELECT server_id FROM entries WHERE entry_id=?", (message_id,)
         )
         row = await cursor.fetchone()
+        if row is None: return None
         return row[0]
 
     @check_connected
