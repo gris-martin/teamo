@@ -9,7 +9,7 @@ on:
       - tests/**
 
 
-# This is not nice and a lot of duplication
+# This could be nicer.
 # Will fix when actions in actions are supported.
 # See https://github.com/actions/runner/issues/646
 jobs:
