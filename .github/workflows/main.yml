@@ -78,7 +78,7 @@ jobs:
           touch teamo/${{ steps.extract_variables.outputs.deploy_name }}/db/teamo.db
           docker run -e TEAMO_BOT_TOKEN=${{ steps.extract_variables.outputs.token }} -d -v $PWD/teamo/${{ steps.extract_variables.outputs.deploy_name }}/db/teamo.db:/teamo/db/teamo.db --name teamo-${{ steps.extract_variables.outputs.deploy_name }}-instance ${{ steps.extract_variables.outputs.tag }}
           sleep 10
-          if [ "$( docker container inspect -f '{{.State.Status}}' teamo-${{ env.GITHUB_REF_NAME }}-instance )" == "running" ]; then exit 0; else echo "Docker container is not running. Did it crash during startup?" && exit 1; fi
+          if [ "$( docker container inspect -f '{{.State.Status}}' teamo-${{ steps.extract_variables.outputs.deploy_name }}-instance )" == "running" ]; then exit 0; else echo "Docker container is not running. Did it crash during startup?" && exit 1; fi
     - name: Create Release
       if: startsWith(github.ref, 'refs/tags/')
       id: create_release
