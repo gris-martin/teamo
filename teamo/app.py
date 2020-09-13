@@ -14,6 +14,7 @@ import dataclasses
 import discord
 from discord.ext import commands
 from dateutil import parser, tz
+from dateutil.parser._parser import ParserError
 from dotenv import load_dotenv
 
 # Internal imports
@@ -33,12 +34,12 @@ class Teamo(commands.Cog):
 
     async def delete_entry(self, message_id: int):
         async with self.locks[message_id]:
+            # Delete message from db
+            await self.db.delete_entry(message_id)
+
             # Delete message from discord
             await self.cached_messages[message_id].delete()
             self.cached_messages[message_id] = None
-
-            # Delete message from db
-            await self.db.delete_entry(message_id)
 
     async def cancel_after(self, message_id: int):
         entry = await self.db.get_entry(message_id)
@@ -88,14 +89,16 @@ class Teamo(commands.Cog):
             for entry in entries:
                 if entry.start_date > datetime.now():
                     continue
+                logging.info(f"Teamo message {entry.message_id} is finished. Creating end message.")
                 settings = await self.db.get_settings(entry.server_id)
                 channel_id = entry.channel_id if settings.end_channel == None else settings.end_channel
                 channel = self.bot.get_channel(channel_id)
                 embed = teamcreation.create_finish_embed(entry)
                 if settings.delete_end_delay < 0:
-                    await channel.send(embed=embed)
+                    end_message = await channel.send(embed=embed)
                 else:
-                    await channel.send(embed=embed, delete_after=settings.delete_end_delay)
+                    end_message = await channel.send(embed=embed, delete_after=settings.delete_end_delay)
+                logging.info(f"End message {end_message.id} created in channel {channel_id} ({channel.name}). It will be removed in {settings.delete_end_delay} seconds.")
                 await self.delete_entry(entry.message_id)
             await asyncio.sleep(utils.get_check_interval())
 
@@ -118,6 +121,7 @@ class Teamo(commands.Cog):
             return
         await message.delete(delay=delay)
 
+    ############## Discord events ##############
     @commands.Cog.listener()
     async def on_connect(self):
         await self.db.init()
@@ -174,7 +178,8 @@ class Teamo(commands.Cog):
 
         await self.startup_done.wait()
         # If cancel emoji: Start cancel procedure
-        if emoji.name == utils.cancel_emoji:
+        if str(emoji) == utils.cancel_emoji:
+            logging.info(f"Received cancel emoji on {message_id}")
             cancel_task = asyncio.create_task(self.cancel_after(message_id))
             self.cancel_tasks[message_id] = cancel_task
             await self.update_message(message_id)
@@ -183,6 +188,7 @@ class Teamo(commands.Cog):
 
         # If number emoji: Add or edit member, remove old reactions, update message
         async with self.locks[message_id]:
+            logging.info(f"Received number emoji {str(emoji)}  on {message_id} from user {payload.member.id} ({payload.member.display_name}")
             num_players = utils.number_emojis.index(emoji.name) + 1
             member = models.Member(
                 payload.member.id, num_players)
@@ -228,7 +234,8 @@ class Teamo(commands.Cog):
             return
 
         # If cancel emoji: Abort cancel procedure
-        if emoji.name == utils.cancel_emoji:
+        if str(emoji) == utils.cancel_emoji:
+            logging.info(f"Cancel emoji removed on message {message_id}")
             cancel_task = self.cancel_tasks[message_id]
             if cancel_task is None or cancel_task.done():
                 return
@@ -239,6 +246,7 @@ class Teamo(commands.Cog):
         # If number emoji: Remove member, update message
         async with self.locks[message_id]:
             user_id = payload.user_id
+            logging.info(f"Number emoji {str(emoji)}  removed on message {message_id} by user {user_id}")
             db_member = await self.db.get_member(message_id, user_id)
             num_players = utils.number_emojis.index(str(emoji)) + 1
             if db_member.num_players != num_players:
@@ -246,6 +254,14 @@ class Teamo(commands.Cog):
             await self.db.delete_member(message_id, user_id)
             await self.update_message(message_id)
             await self.sync_message(message_id)
+
+    @commands.Cog.listener()
+    async def on_raw_message_delete(self, payload: discord.RawMessageDeleteEvent):
+        message_id = payload.message_id
+        entry_exists = await self.db.exists_entry(message_id)
+        if entry_exists:
+            logging.info(f"Teamo message {message_id} was deleted by a user. Removing database entry.")
+            await self.db.delete_entry(message_id)
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx: commands.Context, error: commands.CommandError):
@@ -277,11 +293,12 @@ class Teamo(commands.Cog):
             create 9 19.12 My Fun Game
         '''
         await self.startup_done.wait()
-
+        logging.info(f"Teamo create command received in channel {ctx.channel.id} ({ctx.channel.name}) by user {ctx.author.id} ({ctx.author.name}) with args {arg}")
         settings = await self.db.get_settings(ctx.guild.id)
         teamo_use_channel = ctx.channel if settings.use_channel == None else self.bot.get_channel(settings.use_channel)
         if teamo_use_channel != ctx.channel:
-            self.send_and_log(ctx.channel, f"Teamo commands can only be used in {teamo_use_channel.mention}. Try again there :)")
+            await self.send_and_log(ctx.channel, f"Teamo commands can only be used in {teamo_use_channel.mention}. Try again there :)")
+            return
 
         # Parse arguments
         # TODO: Better date parsing
@@ -310,7 +327,11 @@ class Teamo(commands.Cog):
 
         # date: datetime = date_results[0][1]
         currenttz=settings.get_tzinfo()
-        date = parser.parse(date_str)
+        try:
+            date = parser.parse(date_str)
+        except ParserError:
+            await self.send_and_log(ctx.channel, f"Failed to parse date argument {args.group(2)}")
+            return
         date = date.replace(tzinfo=currenttz)
         datediff = date - datetime.now(tz=currenttz)
         if datediff.total_seconds() < 0:
@@ -360,6 +381,7 @@ class Teamo(commands.Cog):
         delete_delay = await self.db.get_setting(ctx.guild.id, models.SettingsType.DELETE_GENERAL_DELAY)
         if delete_delay >= 0:
             await ctx.message.delete(delay=delete_delay)
+        logging.info(f"Teamo message {message.id} created in channel {teamo_post_channel.id} ({teamo_post_channel.name}) by {ctx.author.id} ({ctx.author.name}).")
 
     ############## Server settings commands ##############
     @commands.group()
@@ -370,7 +392,7 @@ class Teamo(commands.Cog):
         if ctx.author.bot:
             return
         if ctx.invoked_subcommand is None:
-            await ctx.send(f"Unknown serversetting command \"{ctx.subcommand_passed}\". Try `@{self.bot.user.display_name} help serversetting` to get a list of available commands.")
+            await ctx.send(f"Unknown settings command \"{ctx.subcommand_passed}\". Try `@{self.bot.user.display_name} help settings` to get a list of available commands.")
 
     @settings.command()
     async def get(self, ctx: commands.Context, key: str):
@@ -384,6 +406,9 @@ class Teamo(commands.Cog):
             await self.send_and_log(ctx.channel, f"Cannot get value of unknown setting: \"{key}\". Valid settings are:\n ```{utils.get_settings_string()}```")
             return
         v = await self.db.get_setting(ctx.guild.id, setting)
+        if key.endswith("channel") and v is not None:
+            channel_name = ctx.guild.get_channel(v)
+            v = f"{v} ({channel_name})"
         await self.send_and_log(ctx.channel, f"Server setting `{key}`: `{v}`")
 
     @settings.command()
@@ -395,6 +420,10 @@ class Teamo(commands.Cog):
         settings_dict = dataclasses.asdict(settings)
         settings_str = "**Server settings:**\n```"
         for key, value in settings_dict.items():
+            if key.endswith("channel") and value is not None:
+                channel_name = ctx.guild.get_channel(value).name
+                value = f"{value} ({channel_name})"
+
             settings_str += f"  {key:25} {value}\n"
         settings_str = settings_str[:-1] + "```"
 
@@ -411,6 +440,7 @@ class Teamo(commands.Cog):
         Example:
             settings set delete_use_delay 40
             settings set use_channel 749638923554390096
+            settings set end_channel a-channel-name
         '''
         if not ctx.author.guild_permissions.administrator:
             await self.send_and_log(ctx.channel, "Only members with the Administrator permission can set Teamo server settings.")
@@ -421,10 +451,29 @@ class Teamo(commands.Cog):
             await self.send_and_log(ctx.channel, f"Cannot set value of unknown setting: \"{key}\". Valid settings are:\n ```{utils.get_settings_string()}```")
             return
 
+        # Make sure the time zone is a real time zone
         if setting == models.SettingsType.TIMEZONE:
             tzobj = tz.gettz(value)
             if tzobj is None:
                 await self.send_and_log(ctx.channel, f"Invalid time zone: \"{value}\". See https://en.wikipedia.org/wiki/List_of_tz_database_time_zones for a list of valid time zone values.")
+
+        # Make sure the channel exists
+        if setting.is_channel_id():
+            channel_found = False
+            if value.isdigit():
+                channel = await ctx.guild.get_channel(int(value))
+                if channel is not None:
+                    channel_found = True
+            else:
+                for channel in ctx.guild.channels:
+                    if channel.name == value:
+                        channel_found = True
+                        value = str(channel.id)
+                        break
+            if not channel_found:
+                await self.send_and_log(ctx.channel, f"Cannot set `{key}` to `{value}`. No channel with name or ID {value} found on this server.")
+                return
+
 
         await self.db.edit_setting(ctx.guild.id, setting, value)
         await self.send_and_log(ctx.channel, f"Successfully set `{key}` to `{value}`!")
@@ -459,6 +508,7 @@ class Teamo(commands.Cog):
             name="Resources",
             value=
                 "[GitHub](https://github.com/hassanbot/TeamoPy)\n" +
+                "[Issues](https://github.com/hassanbot/TeamoPy/issues)\n" +
                 "[Readme](https://github.com/hassanbot/TeamoPy/blob/main/README.md)\n" +
                 "[Changelog](https://github.com/hassanbot/TeamoPy/blob/main/CHANGELOG.md)",
             inline=False

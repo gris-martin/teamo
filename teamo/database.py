@@ -15,7 +15,7 @@ class Database:
 
     async def init(self):
         async with aiosqlite.connect(self.db_name, detect_types=PARSE_DECLTYPES) as db:
-            logging.info(f"Creating database file {self.db_name}", sys.stderr)
+            logging.info(f"Creating database file {self.db_name}")
             await db.execute('''CREATE TABLE IF NOT EXISTS entries (
                 entry_id integer primary key,
                 channel_id integer,
@@ -88,6 +88,16 @@ class Database:
         return entry
 
     @check_connected
+    async def exists_entry(self, message_id: int, db=None) -> bool:
+        cursor = await db.execute(
+            "SELECT * FROM entries WHERE entry_id=?", (message_id,)
+        )
+        row = await cursor.fetchone()
+        if row is None:
+            return False
+        return True
+
+    @check_connected
     async def insert_entry(self, entry: models.Entry, db=None):
         await db.execute(
             "INSERT INTO entries VALUES (?, ?, ?, ?, ?, ?)",
@@ -117,6 +127,7 @@ class Database:
             "SELECT server_id FROM entries WHERE entry_id=?", (message_id,)
         )
         row = await cursor.fetchone()
+        if row is None: return None
         return row[0]
 
     @check_connected

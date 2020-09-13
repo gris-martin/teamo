@@ -69,6 +69,11 @@ class SettingsType(Enum):
         elif self == self.TIMEZONE: return 'timezone'
         else: return None
 
+    def is_channel_id(self) -> bool:
+        if self == self.USE_CHANNEL or self == self.WAITING_CHANNEL or self == self.END_CHANNEL:
+            return True
+        return False
+
 @dataclass
 class Settings:
     ''' Class for holding per-server settings
