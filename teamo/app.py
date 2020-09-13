@@ -94,9 +94,9 @@ class Teamo(commands.Cog):
                 channel = self.bot.get_channel(channel_id)
                 embed = teamcreation.create_finish_embed(entry)
                 if settings.delete_end_delay < 0:
-                    await channel.send(embed=embed)
+                    end_message = await channel.send(embed=embed)
                 else:
-                    await channel.send(embed=embed, delete_after=settings.delete_end_delay)
+                    end_message = await channel.send(embed=embed, delete_after=settings.delete_end_delay)
                 logging.info(f"End message {end_message.id} created in channel {channel_id} ({channel.name}). It will be removed in {settings.delete_end_delay} seconds.")
                 await self.delete_entry(entry.message_id)
             await asyncio.sleep(utils.get_check_interval())
