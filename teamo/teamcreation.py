@@ -111,7 +111,7 @@ def create_finish_embed(entry: Entry) -> discord.Embed:
 
     if len(entry.members) == 0:
         embed.add_field(name="Player list empty",
-                        value="No one registered for the game :c Maybe next time!")
+                        value="No one registered for the game. Maybe next time!")
     else:
         teams = create_teams(entry)
         for team in teams:
