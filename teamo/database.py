@@ -15,7 +15,7 @@ class Database:
 
     async def init(self):
         async with aiosqlite.connect(self.db_name, detect_types=PARSE_DECLTYPES) as db:
-            logging.info(f"Creating database file {self.db_name}")
+            logging.info(f"Using database file {self.db_name}")
             await db.execute('''CREATE TABLE IF NOT EXISTS entries (
                 entry_id integer primary key,
                 channel_id integer,
