@@ -44,11 +44,25 @@ Good luck and have fun in the game!
 
 ### Commands
 
-- **Create** - `@Teamo create <date/time> <maxPlayersPerTeam> <game>`
-- **Edit game** - `@Teamo edit game <game>`
+- **create \<number of players per team\> \<time (hh:mm)\> \<game\>** - Create a new Teamo!
+- **settings** - See and change server-wide settings. The sub-options `set <key> <value>`, `get <key>` and `showall` exists.
+- **welcome** - Post a nicely formatted message which can be pinned to a channel to show everyone how to use Teamo.
+<!-- - **Edit game** - `@Teamo edit game <game>`
 - **Edit max players** - `@Teamo edit maxPlayers|players <maxPlayersPerTeam>`
 - **Edit date or time** - `@Teamo edit date|time <date/time>`
-- **Cancel** - `@Teamo delete|remove|cancel <id>`
+- **Cancel** - `@Teamo delete|remove|cancel <id>` -->
+
+### Adding Teamo to your server
+
+I have a Teamo instance hosted privately which can be added to a server using this link: https://discord.com/api/oauth2/authorize?client_id=589788908032622623&permissions=76864&scope=bot
+
+The following permissions are needed:
+
+- **View Channels** - Needed to read and respond to messages.
+- **Send Messages** - Needed to send messages.
+- **Manage Messages** - Needed to update the Teamo message as people register, and to delete old messages (if configured to do that).
+- **Read Message History** - Needed to allow Teamo to find old Teamo messages if the bot script is restarted for some reason.
+- **Add Reactions** - Needed to add the registration and cancel reactions.
 
 ## Developing
 ### Environment variables
