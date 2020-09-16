@@ -278,6 +278,13 @@ class Teamo(commands.Cog):
     async def on_command_completion(self, ctx: commands.Context):
         await self.remove_user_message(ctx.message)
 
+    @commands.Cog.listener()
+    async def on_guild_join(self, guild: discord.Guild):
+        settings = await self.db.get_settings(guild.id)
+        if settings == None:
+            await self.db.insert_settings(guild.id, models.Settings())
+        logging.info(f"Joined guild {guild.id} ({guild.name})")
+
     ############## Teamo commands ##############
     @commands.command(usage="<number of players> <time> <game>")
     async def create(self, ctx: commands.Context, *, arg: str):
