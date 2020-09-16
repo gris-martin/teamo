@@ -20,7 +20,10 @@ Changes should be in one of the following categories:
 
 
 ---
-## 1.1.0 - (2020-09-13)
+## 1.1.0 - (2020-09-16)
 
 ### Changes
 * Adds an activity ("Listening to @Teamo help")
+
+### Fixes
+* Fixes a bug which wouldn't let Teamo receive commands from new servers
