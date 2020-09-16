@@ -540,17 +540,18 @@ def main():
 
     @bot.event
     async def on_ready():
-        logging.info(f"Connected as {bot}")
+        await bot.change_presence(
+            activity=discord.Activity(
+                name=f"@{bot.user.display_name} help",
+                type=discord.ActivityType.listening))
+        logging.info(f"Connected as {bot} ({bot.user.display_name})")
 
     token = os.environ["TEAMO_BOT_TOKEN"]
     if (token is None):
         logging.error("Missing bot token. Set the TEAMO_BOT_TOKEN environment variable to the bot token found on the Discord Developer Portal.")
         sys.exit(1)
 
-    try:
-        bot.run(token)
-    finally:
-        bot.db
+    bot.run(token)
 
 if __name__ == "__main__":
     main()
