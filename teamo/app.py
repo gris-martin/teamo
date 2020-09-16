@@ -282,7 +282,8 @@ class Teamo(commands.Cog):
     async def on_guild_join(self, guild: discord.Guild):
         settings = await self.db.get_settings(guild.id)
         if settings == None:
-            await self.db.insert_settings(guild.id, models.Settings())
+            tzinfo = utils.get_tzname_from_region(guild.region)
+            await self.db.insert_settings(guild.id, timezone=tzinfo)
         logging.info(f"Joined guild {guild.id} ({guild.name})")
 
     ############## Teamo commands ##############

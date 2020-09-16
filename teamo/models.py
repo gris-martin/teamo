@@ -95,7 +95,7 @@ class Settings:
     delete_use_delay: int = 30
     delete_end_delay: int = 60 * 60
     cancel_delay: int = 30
-    timezone: str = None
+    timezone: str = "Europe/Stockholm"
 
     def get_tzinfo(self) -> tzinfo:
         return tz.gettz(self.timezone)
