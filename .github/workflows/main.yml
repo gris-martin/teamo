@@ -42,6 +42,7 @@ jobs:
           if [[ $GITHUB_REF_NAME != $(cat VERSION) ]]
           then
             echo "::error::Tag name doesn't match VERSION file!"
+            exit 1
           fi
           echo ::set-output name=tag::docker.pkg.github.com/${GITHUB_REPOSITORY_OWNER_SLUG}/${GITHUB_REPOSITORY_NAME_SLUG}/teamo
           echo "::set-output name=token::${{ secrets.TEAMO_BOT_TOKEN_DEPLOY }}"
