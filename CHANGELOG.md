@@ -10,10 +10,17 @@ Changes should be in one of the following categories:
 - New
 - Changes
 - Fixes
----
 
-## 1.0.0 - (2020-09-13)
+
 ---
+## 1.0.0 - (2020-09-13)
 
 ### New
 * Initial release
+
+
+---
+## 1.1.0 - (2020-09-13)
+
+### Changes
+* Adds an activity ("Listening to @Teamo help")
