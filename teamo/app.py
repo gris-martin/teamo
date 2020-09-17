@@ -465,6 +465,7 @@ class Teamo(commands.Cog):
             tzobj = tz.gettz(value)
             if tzobj is None:
                 await self.send_and_log(ctx.channel, f"Invalid time zone: \"{value}\". See https://en.wikipedia.org/wiki/List_of_tz_database_time_zones for a list of valid time zone values.")
+                return
 
         # Make sure the channel exists
         if setting.is_channel_id():
