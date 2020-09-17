@@ -4,14 +4,13 @@ import random
 import pathlib
 
 import discord
+import pkg_resources
 
 from teamo.models import Member, Entry
 from teamo.utils import get_date_string
 
-current_filepath = pathlib.Path(__file__).parent.absolute()
-noun_filename = "resources/nouns.list"
-adjectives_filename = "resources/adjectives.list"
-
+noun_filename = pkg_resources.resource_filename("teamo", "resources/nouns.list")
+adjectives_filename = pkg_resources.resource_filename("teamo", "resources/adjectives.list")
 
 def generate_name_list(filename: str) -> List[str]:
     with open(filename, encoding="utf8") as f:
