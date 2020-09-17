@@ -190,7 +190,7 @@ class Teamo(commands.Cog):
 
         # If number emoji: Add or edit member, remove old reactions, update message
         async with self.locks[message_id]:
-            logging.info(f"Received number emoji {str(emoji)}  on {message_id} from user {payload.member.id} ({payload.member.display_name}")
+            logging.info(f"Received number emoji {str(emoji)}  on {message_id} from user {payload.member.id} ({payload.member.display_name})")
             num_players = utils.number_emojis.index(emoji.name) + 1
             member = models.Member(
                 payload.member.id, num_players)
