@@ -27,3 +27,14 @@ Changes should be in one of the following categories:
 
 ### Fixes
 * Fixes a bug which wouldn't let Teamo receive commands from new servers
+
+
+---
+## 1.2.0 - (2020-09-17)
+
+### Changes
+* Correctly links to the new Teamo repository (moved from hassanbot to gris-martin)
+
+### Fixes
+* Makes sure you can't set an invalid timezone with the `settings set timezone <timezone>` command
+* Fixes a few timezone and resource issues that broke most commands
