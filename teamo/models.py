@@ -2,6 +2,7 @@ from typing import List
 from datetime import datetime, tzinfo
 from dataclasses import dataclass, field
 from enum import Enum, auto
+from copy import copy
 
 from dateutil import tz
 
@@ -35,6 +36,10 @@ class Entry:
         d = d.replace(tzinfo=tzinfo)
         return cls(*args[0:4], d, *args[5:])
 
+    def with_naive_datetime(self):
+        new_entry = copy(self)
+        new_entry.start_date = new_entry.start_date.replace(tzinfo=None)
+        return new_entry
 
 class SettingsType(Enum):
     USE_CHANNEL = auto()

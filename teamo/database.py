@@ -101,7 +101,7 @@ class Database:
     async def insert_entry(self, entry: models.Entry, db=None):
         await db.execute(
             "INSERT INTO entries VALUES (?, ?, ?, ?, ?, ?)",
-            astuple(entry)[:-1]
+            astuple(entry.with_naive_datetime())[:-1]
         )
 
         member_tuple_list = list(map(lambda m: (entry.message_id, m.user_id, m.num_players), entry.members))
