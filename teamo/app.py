@@ -518,10 +518,10 @@ class Teamo(commands.Cog):
         embed.add_field(
             name="Resources",
             value=
-                "[GitHub](https://github.com/hassanbot/teamo)\n" +
-                "[Issues](https://github.com/hassanbot/teamo/issues)\n" +
-                "[Readme](https://github.com/hassanbot/teamo/blob/main/README.md)\n" +
-                "[Changelog](https://github.com/hassanbot/teamo/blob/main/CHANGELOG.md)",
+                "[GitHub](https://github.com/gris-martin/teamo)\n" +
+                "[Issues](https://github.com/gris-martin/teamo/issues)\n" +
+                "[Readme](https://github.com/gris-martin/teamo/blob/main/README.md)\n" +
+                "[Changelog](https://github.com/gris-martin/teamo/blob/main/CHANGELOG.md)",
             inline=False
         )
 

@@ -1,4 +1,4 @@
-![Teamo tests](https://github.com/hassanbot/teamo/workflows/Teamo%20tests/badge.svg?branch=main)
+![Teamo tests](https://github.com/gris-martin/teamo/workflows/Teamo%20tests/badge.svg?branch=main)
 
 # Teamo
 A Discord bot for creating teams and finding people to play with :)
