@@ -1,5 +1,5 @@
 from typing import List
-from datetime import datetime, timezone, tzinfo
+from datetime import datetime, tzinfo
 from dataclasses import dataclass, field
 from enum import Enum, auto
 
