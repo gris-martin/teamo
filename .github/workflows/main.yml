@@ -31,7 +31,7 @@ jobs:
         python setup.py bdist_wheel
     - name: Extract some stuff
       run: |
-        echo ::set-output name=version::$(cat VERSION)
+        echo ::set-output name=version::$(cat teamo/VERSION)
         if [[ "$GITHUB_REF_NAME_SLUG" == "main" ]]
         then
           echo ::set-output name=tag::docker.pkg.github.com/${GITHUB_REPOSITORY_OWNER_SLUG}/${GITHUB_REPOSITORY_NAME_SLUG}/teamo:${GITHUB_REF_NAME_SLUG}
@@ -39,9 +39,9 @@ jobs:
           echo ::set-output name=deploy_name::main
         elif [[ $GITHUB_REF == refs/tags/* ]]
         then
-          if [[ $GITHUB_REF_NAME != $(cat VERSION) ]]
+          if [[ $GITHUB_REF_NAME != $(cat teamo/VERSION) ]]
           then
-            echo "::error::Tag name doesn't match VERSION file!"
+            echo "::error::Tag name doesn't match teamo/VERSION file!"
             exit 1
           fi
           echo ::set-output name=tag::docker.pkg.github.com/${GITHUB_REPOSITORY_OWNER_SLUG}/${GITHUB_REPOSITORY_NAME_SLUG}/teamo

@@ -6,7 +6,7 @@ with open('README.md', encoding='utf8') as f:
 with open('LICENSE', encoding='utf8') as f:
     license = f.read()
 
-with open('VERSION', encoding='utf8') as f:
+with open('teamo/VERSION', encoding='utf8') as f:
     version = f.read()
 
 setup(
@@ -23,12 +23,12 @@ setup(
         'aiosqlite',
         'dateparser',
         'discord.py~=1.4',
-        'python-dotenv'
+        'python-dotenv',
+        'setuptools'
     ],
-    data_files=[
-        ('resources', ['resources/adjectives.list', 'resources/nouns.list', 'resources/.env']),
-        ('.', ['./VERSION'])
-    ],
+    package_data={
+        '': ['resources/*.list', 'resources/.env', 'VERSION']
+    },
     entry_points={
         'console_scripts': [
             'teamo = teamo.__main__:main'
