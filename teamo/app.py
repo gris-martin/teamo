@@ -88,7 +88,8 @@ class Teamo(commands.Cog):
         while True:
             entries = await self.db.get_all_entries()
             for entry in entries:
-                if entry.start_date > datetime.now():
+                timezone = entry.start_date.tzinfo
+                if entry.start_date > datetime.now(tz=timezone):
                     continue
                 logging.info(f"Teamo message {entry.message_id} is finished. Creating end message.")
                 settings = await self.db.get_settings(entry.server_id)

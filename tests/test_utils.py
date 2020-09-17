@@ -30,7 +30,7 @@ date_string_params = itertools.product(tznames, date_string_tds)
 
 @pytest.mark.parametrize("tzname, timediff", date_string_params)
 def test_get_date_string(tzname: str, timediff: timedelta):
-    now = datetime.now(tz.gettz(tzname))
+    now = datetime.now(tz=tz.gettz(tzname))
 
     date1 = now + timediff
     date1_str = utils.get_date_string(date1)

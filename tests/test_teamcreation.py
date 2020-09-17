@@ -1,4 +1,5 @@
 from datetime import datetime
+from dateutil import tz
 
 import pytest
 
@@ -12,7 +13,7 @@ def entry_and_teams():
         channel_id=0,
         server_id=0,
         game="Test game",
-        start_date=datetime.now(),
+        start_date=datetime.now(tz=tz.gettz("Europe/Stockholm")),
         max_players=5
     )
     entry_and_teams = {

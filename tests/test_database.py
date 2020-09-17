@@ -59,7 +59,7 @@ async def test_delete_member(db):
         channel_id = 0,
         server_id = server_id,
         game = "Testgame",
-        start_date = datetime.now(),
+        start_date = datetime.now(tz=settings.get_tzinfo()),
         max_players = 4
     )
 
@@ -98,7 +98,7 @@ async def test_get_member(db):
         channel_id = 0,
         server_id = server_id,
         game = "Testgame",
-        start_date = datetime.now(),
+        start_date = datetime.now(tz=settings.get_tzinfo()),
         max_players = 4
     )
     member1 = models.Member(1, 3)
@@ -123,7 +123,7 @@ async def test_insert_member(db):
         channel_id = 0,
         server_id = server_id,
         game = "Testgame",
-        start_date = datetime.now(),
+        start_date = datetime.now(tz=settings.get_tzinfo()),
         max_players = 1
     )
 
@@ -158,7 +158,7 @@ async def test_delete_entry(db):
         channel_id = 0,
         server_id = server_id,
         game = "Testgame",
-        start_date = datetime.now(settings.get_tzinfo()),
+        start_date = datetime.now(tz=settings.get_tzinfo()),
         max_players = 1
     )
 

@@ -56,7 +56,7 @@ def create_embed(entry: Entry, cancel_delay: int = 0, is_cancelling: bool = Fals
         description=f"**Start: {date_string}** - To subscribe, select the #️⃣ reaction below with the number of players in your group. To cancel the event, select the {cancel_emoji} reaction."
     )
     embed.color = discord.Color.purple()
-    tl: timedelta = entry.start_date - datetime.now()
+    tl: timedelta = entry.start_date - datetime.now(tz=entry.start_date.tzinfo)
     embed.add_field(name="Time left",
                     value=get_timedelta_string(tl), inline=False)
     embed.add_field(name="Players per team",
@@ -82,7 +82,8 @@ def create_embed(entry: Entry, cancel_delay: int = 0, is_cancelling: bool = Fals
     footer_text = ""
     if entry.message_id is not None:
         footer_text += f"ID: {entry.message_id}\n"
-    footer_text += f"Last updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+    timezone = entry.start_date.tzinfo
+    footer_text += f"Last updated: {datetime.now(tz=timezone).strftime('%Y-%m-%d %H:%M:%S')}"
     update_interval = get_update_interval()
     if update_interval > 0:
         footer_text += f" (updated every {update_interval} seconds)"
