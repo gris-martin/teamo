@@ -9,6 +9,7 @@ import sys
 import argparse
 import logging
 import dataclasses
+from time import perf_counter
 
 # Third party imports
 import discord
@@ -78,8 +79,12 @@ class Teamo(commands.Cog):
         while True:
             try:
                 entries = await self.db.get_all_entries()
+                tic = perf_counter()
                 for entry in entries:
                     await self.update_message(entry)
+                if len(entries) > 0:
+                    toc = perf_counter()
+                    logging.info(f"Updated {len(entries)} entries took {toc-tic} seconds.")
             except Exception:
                 traceback.print_exc()
             await asyncio.sleep(utils.get_update_interval())
