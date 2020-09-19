@@ -375,6 +375,12 @@ class Teamo(commands.Cog):
         entry.server_id = ctx.guild.id
         await self.db.insert_entry(entry)
 
+        # If the message was received in a different channel from where the
+        # Teamo message will be posted, create a message to point the user
+        # to the Teamo channel
+        if ctx.channel.id != teamo_post_channel.id:
+            await self.send_and_log(ctx.channel, f"Teamo message created in {teamo_post_channel.mention}.")
+
         # Update message again to show ID
         # Add reactions
         await self.update_message(entry)
